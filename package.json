@@ -20,6 +20,10 @@
     "structure",
     "codegen"
   ],
+  "repository": {
+    "type" : "git",
+    "url" : "https://github.com/christianlarsen/rpg-structure.git"
+  },
   "activationEvents": [],
   "main": "./out/extension.js",
   "contributes": {

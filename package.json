@@ -2,13 +2,23 @@
   "name": "rpg-structure",
   "displayName": "RPG structure",
   "description": "RPG: Define qualified structure",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "publisher": "ChristianLarsen",
   "engines": {
     "vscode": "^1.75.0"
   },
   "categories": [
-    "Other"
+    "Programming Languages"
+  ],
+  "icon" : "assets/rpg-structure-icon.png",
+  "keywords": [
+    "rpg",
+    "ibmi",
+    "rpgle",
+    "sqlrpgle",
+    "as400",
+    "structure",
+    "codegen"
   ],
   "activationEvents": [],
   "main": "./out/extension.js",

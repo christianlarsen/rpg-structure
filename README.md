@@ -13,6 +13,9 @@ See the "Know issues", to see what is not done at the moment, and what is going 
 Once active, press Ctrl+Shift+P or F1, and search for "RPG structure" to easily run the extension. You must have an active editor and the source code must be RPGLE or SQLRPGLE.
 You can also add "RPG Structure" to the taskbar and use it by simply clicking the button.
 
+https://github.com/user-attachments/assets/017207c7-86b5-41ce-a190-55ef27e278e1
+
+
 ## Requirements
 
 The extension requires version 1.75 of VSCode.

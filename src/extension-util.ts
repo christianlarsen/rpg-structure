@@ -144,23 +144,29 @@ export function getWebviewContent(webview: vscode.Webview, nonce: string): strin
                 structureName = e.target.value;
                 updateSummary();
             });
+
             document.getElementById('structureType').addEventListener('change', e => {
                 structureType = e.target.value;
                 updateSummary();
             });
+
             document.getElementById('dimension').addEventListener('input', e => {
                 dimension = e.target.value;
                 updateSummary();
             });
+
             document.getElementById('addFieldBtn').addEventListener('click', () => {
                 const name = document.getElementById('fieldName').value.trim();
                 const type = document.getElementById('fieldType').value.trim();
                 const length = document.getElementById('fieldLength').value.trim();
                 const init = document.getElementById('fieldInit').value.trim();
                 if (!name || !type || !length) {
-                    alert('Field name, type and length are required.');
+                    const alert = 'Field name, type, and length are required.';
+                    vscode.postMessage({ command: 'alert', alert });
                     return;
                 }
+                vscode.postMessage({ command: 'newfield', name, type, length, init });
+
                 fields.push({ name, type, length, init: init || undefined });
                 document.getElementById('fieldName').value = '';
                 document.getElementById('fieldType').value = '';
@@ -168,9 +174,11 @@ export function getWebviewContent(webview: vscode.Webview, nonce: string): strin
                 document.getElementById('fieldInit').value = '';
                 updateSummary();
             });
+
             insertBtn.addEventListener('click', () => {
                 vscode.postMessage({ command: 'insert', structureName, structureType, dimension, fields });
             });
+
             document.getElementById('cancelBtn').addEventListener('click', () => {
                 vscode.postMessage({ command: 'cancel' });
             });

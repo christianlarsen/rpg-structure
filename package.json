@@ -2,7 +2,7 @@
   "name": "rpg-structure",
   "displayName": "RPG structure",
   "description": "RPG: Define qualified structure",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "publisher": "ChristianLarsen",
   "engines": {
     "vscode": "^1.75.0"
@@ -10,7 +10,7 @@
   "categories": [
     "Programming Languages"
   ],
-  "icon" : "assets/rpg-structure-icon.png",
+  "icon": "assets/rpg-structure-icon.png",
   "keywords": [
     "rpg",
     "ibmi",
@@ -21,8 +21,8 @@
     "codegen"
   ],
   "repository": {
-    "type" : "git",
-    "url" : "https://github.com/christianlarsen/rpg-structure.git"
+    "type": "git",
+    "url": "https://github.com/christianlarsen/rpg-structure.git"
   },
   "activationEvents": [],
   "main": "./out/extension.js",
@@ -30,7 +30,31 @@
     "commands": [
       {
         "command": "rpg-structure.generator",
-        "title": "RPG structure generator"
+        "title": "Structure generator",
+        "category": "RPG"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "rpg-structure",
+          "title": "RPG Structure",
+          "icon": "assets/rpg-structure-icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "rpg-structure": [
+        {
+          "id": "rpg-structure-button",
+          "name": "RPG Structure"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view" : "rpg-structure-button",
+        "contents" : "Press to run the RPG Structure generator.\n\n[RPG Structure Wizard](command:rpg-structure.generator)\n"
       }
     ]
   },

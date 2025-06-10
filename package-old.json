@@ -2,17 +2,15 @@
   "name": "rpg-structure",
   "displayName": "RPG structure",
   "description": "RPG: Define qualified structure",
-  "icon": "assets/rpg-structure-icon.png",
-  "author": {
-    "name" : "Christian Larsen",
-    "url" : "https://www.linkedin.com/in/christianlarsenvalverde/"
-  },
+  "version": "0.0.3",
   "publisher": "ChristianLarsen",
-  "version": "0.0.4",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/christianlarsen/rpg-structure.git"
+  "engines": {
+    "vscode": "^1.75.0"
   },
+  "categories": [
+    "Programming Languages"
+  ],
+  "icon": "assets/rpg-structure-icon.png",
   "keywords": [
     "rpg",
     "ibmi",
@@ -22,22 +20,26 @@
     "structure",
     "codegen"
   ],
-  "engines": {
-    "vscode": "^1.75.0"
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/christianlarsen/rpg-structure.git"
   },
-  "categories": [
-    "Programming Languages"
-  ],
   "activationEvents": [],
   "main": "./out/extension.js",
   "contributes": {
+    "commands": [
+      {
+        "command": "rpg-structure.generator",
+        "title": "Structure generator",
+        "category": "RPG"
+      }
+    ],
     "viewsContainers": {
       "activitybar": [
         {
           "id": "rpg-structure",
           "title": "RPG Structure",
-          "icon": "assets/rpg-structure-icon.svg",
-          "when" : "rpgstructure.showContainer"
+          "icon": "assets/rpg-structure-icon.svg"
         }
       ]
     },
@@ -45,17 +47,20 @@
       "rpg-structure": [
         {
           "id": "rpg-structure-header",
-          "name": "Structure definition",
-          "when" : "resourceExtname == .rpgle"
-          
+          "name": "Structure definition"
         },
         {
           "id" : "rpg-structure-fields",
-          "name" : "Fields",
-          "when" : "resourceExtname == .rpgle || resourceExtname == .sqlrpgle"
+          "name" : "Fields"
         }
       ]
-    }
+    },
+    "viewsWelcome": [
+      {
+        "view" : "rpg-structure-button",
+        "contents" : "Press to run the RPG Structure generator.\n\n[RPG Structure Wizard](command:rpg-structure.generator)\n"
+      }
+    ]
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",

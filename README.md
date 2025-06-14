@@ -10,10 +10,8 @@ See the "Know issues", to see what is not done at the moment, and what is going 
 
 ## How to use
 
-Once active, press Ctrl+Shift+P or F1, and search for "RPG structure" to easily run the extension. You must have an active editor and the source code must be RPGLE or SQLRPGLE.
-You can also add "RPG Structure" to the taskbar and use it by simply clicking the button.
-
-https://github.com/user-attachments/assets/017207c7-86b5-41ce-a190-55ef27e278e1
+Once active, if you have a RPGLE or SQLRPGLE active editor, you can press the icon (if visible) on the activity bar.
+Then you can add your structure data ("header"), and the different fields ("fields"). Then you can press the button to insert the structure on your code, in the place you need.
 
 
 ## Requirements
@@ -22,14 +20,15 @@ The extension requires version 1.75 of VSCode.
 
 ## Known Issues
 
-- Substructures cannot be defined at the moment (TODO).
-- Some data types doesn't need a size, but the extension does not allow to leave that field empty (TODO).
+- None at the moment.
 
 ## To Do
 
-- The idea is to change the webview and integrate the extension into the main sidebar, making it easier to use.
+- (TODO) Adding "sub-structures".
+- (TODO) Adding new types.
+- (TODO) Possibility of adding commentaries to the structure or structure fields.
 
-### 0.0.3
+### 0.0.4
 Read the CHANGELOG.
 
 **Please leave a comment, and Enjoy!**

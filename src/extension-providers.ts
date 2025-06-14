@@ -1,13 +1,8 @@
 import * as vscode from 'vscode';
-import { Field, fields } from './rpg-structure-model';
+import { Field, fields, header } from './rpg-structure-model';
 
 // Provider class for "Header" (structure data)
 export class HeaderTreeDataProvider implements vscode.TreeDataProvider<StructureItem> {
-    private items: StructureItem[] = [
-        new StructureItem('NAME: (Required) ', 'name', 'symbol-text', vscode.TreeItemCollapsibleState.None),
-        new StructureItem('TYPE: (Required)', 'type', 'symbol-type-parameter', vscode.TreeItemCollapsibleState.None),
-        new StructureItem('DIMENSION: (Required)', 'dimension', 'symbol-unit', vscode.TreeItemCollapsibleState.None)
-    ];
 
     private _onDidChangeTreeData: vscode.EventEmitter<StructureItem | undefined> = new vscode.EventEmitter<StructureItem | undefined>();
     readonly onDidChangeTreeData: vscode.Event<StructureItem | undefined> = this._onDidChangeTreeData.event;
@@ -17,7 +12,12 @@ export class HeaderTreeDataProvider implements vscode.TreeDataProvider<Structure
     };
 
     getChildren(): Thenable<StructureItem[]> {
-        return Promise.resolve(this.items);
+        const items: StructureItem[] = [
+            new StructureItem(`NAME: ${header.name || '(Required)'}`, 'name', 'symbol-text', vscode.TreeItemCollapsibleState.None),
+            new StructureItem(`TYPE: ${header.type || '(Required)'}`, 'type', 'symbol-type-parameter', vscode.TreeItemCollapsibleState.None),
+            new StructureItem(`DIMENSION: ${header.dimension > 0 ? header.dimension.toString() : '(Required)'}`, 'dimension', 'symbol-unit', vscode.TreeItemCollapsibleState.None)
+        ];
+        return Promise.resolve(items);
     };
 
     refresh(): void {
@@ -45,51 +45,52 @@ export class StructureItem extends vscode.TreeItem {
 
 // Provider class for "Fields" (fields data)
 export class FieldsTreeDataProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
-    private fields: FieldItem[] = [];
 
-    private _onDidChangeTreeData: vscode.EventEmitter<vscode.TreeItem | undefined> = new vscode.EventEmitter();
-    readonly onDidChangeTreeData: vscode.Event<vscode.TreeItem | undefined> = this._onDidChangeTreeData.event;
+    private _onDidChangeTreeData: vscode.EventEmitter<vscode.TreeItem | undefined | null | void> = new vscode.EventEmitter<vscode.TreeItem | undefined | null | void>();
+    readonly onDidChangeTreeData: vscode.Event<vscode.TreeItem | undefined | null | void> = this._onDidChangeTreeData.event;
+
+    //private fields: FieldItem[] = [];
 
     getTreeItem(element: vscode.TreeItem): vscode.TreeItem {
         return element;
     };
 
-    getChildren(): Thenable<vscode.TreeItem[]> {
+    getChildren(element?: vscode.TreeItem): Thenable<vscode.TreeItem[]> {
+        if (!element) {
+            return Promise.resolve(fields.map(f =>
+                new FieldItem(f.name, f.type, f.length, f.init)
+            ));
+        }
 
-        const items: vscode.TreeItem[] = [];
+        if (element instanceof FieldItem) {
+            const children: vscode.TreeItem[] = [];
 
-        // Button for adding fields
-        const addButton = new vscode.TreeItem('Add Field', vscode.TreeItemCollapsibleState.None);
-        addButton.iconPath = new vscode.ThemeIcon('add');
-        addButton.command = {
-            command: 'rpgStructure.addField',
-            title: 'Add Field'
-        };
-        items.push(addButton);
-        // Add fields
-        items.push(...this.fields);
+            children.push(new FieldDetailItem(`Type: ${element.type}`));
+            if (element.length) {
+                children.push(new FieldDetailItem(`Length: ${element.length}`));
+            }
+            if (element.init) {
+                children.push(new FieldDetailItem(`Init: ${element.init}`));
+            }
 
-        // Button for creating structure
-        if (this.fields.length > 0) {
-            const generateStructure = new vscode.TreeItem('Generate Structure', vscode.TreeItemCollapsibleState.None);
-            generateStructure.iconPath = new vscode.ThemeIcon('check');
-            generateStructure.command = {
-                command : 'rpgStructure.generate',
-                title : 'Generate RPG Structure'
-            };
-            items.push(generateStructure);
-        };
+            return Promise.resolve(children);
+        }
 
-        return Promise.resolve(items);
+        return Promise.resolve([]);
     };
 
     addField(field: FieldItem) {
-        this.fields.push(field);
+        fields.push(field);
         this.refresh();
     };
 
     refresh(): void {
-        this._onDidChangeTreeData.fire(undefined);
+        this._onDidChangeTreeData.fire();
+    };
+
+    clear(): void {
+        fields.length = 0;
+        this.refresh();
     };
 };
 
@@ -101,16 +102,24 @@ export class FieldItem extends vscode.TreeItem {
         public length: string | undefined,
         public init: string | undefined
     ) {
-        // Shows the information of the field added
-        super(`${name}, type: ${type}${length ? `(${length})` : ''}, init: ${init}`, vscode.TreeItemCollapsibleState.None);
+        super(name, vscode.TreeItemCollapsibleState.Collapsed);
+        this.tooltip = `Field: ${name}`;
+        this.description = `${type}${length ? `(${length})` : ''}`;
 
-        // Adds the field to my fields structure
-        const field: Field = {
-            name: name,
-            type: type,
-            length: length,
-            init: init
-        };
-        fields.push(field);
     };
 };
+
+export class FieldDetailItem extends vscode.TreeItem {
+    constructor(label: string) {
+        super(label, vscode.TreeItemCollapsibleState.None);
+    };
+};
+
+export class FieldPropertyItem extends vscode.TreeItem {
+    constructor(label: string) {
+        super(label, vscode.TreeItemCollapsibleState.None);
+        this.contextValue = 'fieldProperty';
+    }
+};
+
+

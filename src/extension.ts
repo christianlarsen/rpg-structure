@@ -3,19 +3,13 @@
 */
 
 import * as vscode from 'vscode';
-import { handleInsert } from './extension-util';
-import { Header, fields } from './rpg-structure-model';
+import { handleInsert, getInitPlaceholder } from './extension-util';
+import { header, fields } from './rpg-structure-model';
 import { HeaderTreeDataProvider, StructureItem, FieldsTreeDataProvider, FieldItem } from './extension-providers';
 
 // Function that activates the extension
 export function activate(context: vscode.ExtensionContext) {
 
-	// Initialize the structure info
-	let header: Header = {
-		name: "",
-		type: "",
-		dimension: 0
-	};
 	// Editor and position to insert the code
 	let editor = vscode.window.activeTextEditor;
 	const insertPosition = editor?.selection.active;
@@ -29,9 +23,9 @@ export function activate(context: vscode.ExtensionContext) {
 	vscode.window.registerTreeDataProvider('rpg-structure-fields', fieldsProvider)
 
 	// Activate the activity bar extension if the editor is "rpgle" or "sqlrpgle"
-	const isRpgle = editor?.document.languageId === 'rpgle' || 
+	const isRpgle = editor?.document.languageId === 'rpgle' ||
 		editor?.document.languageId === 'sqlrpgle';
-  	vscode.commands.executeCommand('setContext', 'rpgStructure.showContainer', isRpgle);
+	vscode.commands.executeCommand('setContext', 'rpgStructure.showContainer', isRpgle);
 
 	// Check if the editor has been changed, so maybe I have to remove the extension from the activity bar
 	vscode.window.onDidChangeActiveTextEditor(editor => {
@@ -45,6 +39,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 		// Structure data =================================================================================
 		vscode.commands.registerCommand('rpgStructure.itemClick', async (item: StructureItem) => {
+
 			switch (item.id) {
 				case 'name':
 					const inputName = await vscode.window.showInputBox({
@@ -92,7 +87,10 @@ export function activate(context: vscode.ExtensionContext) {
 					};
 					provider.refresh();
 					break;
-			}
+			};
+			vscode.commands.executeCommand('setContext', 'rpgStructure.hasHeader',
+				(header.name !== '') && (header.dimension !== 0) && (header.type !== ''));
+
 		}),
 
 		// Add Field ======================================================================================
@@ -107,39 +105,108 @@ export function activate(context: vscode.ExtensionContext) {
 
 			let length: string | undefined;
 			if (type === 'char' || type === 'varchar' || type === 'zoned' || type === 'dec' || type === 'packed') {
-				const lenStr = await vscode.window.showInputBox({ prompt: 'Field length' });
+
+				const lenStr = await vscode.window.showInputBox({
+					prompt: 'Field length',
+					placeHolder: type === 'zoned' || type === 'packed' ? 'e.g. 5 or 13:2' : 'e.g. 10',
+					validateInput: (input) => {
+						if (!input) return 'Length is required';
+
+						// Simple integer
+						if (/^\d+$/.test(input)) return undefined;
+
+						// Format N:N for zoned/packed only
+						if ((type === 'zoned' || type === 'packed') && /^\d+:\d+$/.test(input)) {
+							const [whole, decimal] = input.split(':').map(Number);
+							if (decimal >= whole) return 'Decimal part must be smaller than total length';
+							return undefined;
+						};
+
+						return 'Invalid format';
+					}
+				});
 				length = lenStr;
-			}
-			const init = await vscode.window.showInputBox({ prompt: 'Init value (optional)' });
+			};
+
+			const init = await vscode.window.showInputBox({
+				prompt: 'Init value (optional)',
+				placeHolder: getInitPlaceholder(type),
+				validateInput: (input) => {
+					if (!input) return undefined; // opcional
+
+					if (type === 'char' || type === 'varchar') {
+						if (!/^'.*'$/.test(input)) return 'String must be enclosed in single quotes';
+						const content = input.slice(1, -1); // remove quotes
+						const maxLength = length ? parseInt(length.split(':')[0]) : 0;
+						if (content.length > maxLength) return `String too long (max ${maxLength} chars)`;
+						return undefined;
+					};
+					if (type === 'ind') {
+						const validValues = ['1', '0', '*on', '*off'];
+						if (!validValues.includes(input.toLowerCase()))
+							return "Must be '1', '0', '*on', or '*off'";
+						return undefined;
+					};
+					if (type === 'zoned' || type === 'packed') {
+						if (!/^\d+(\.\d+)?$/.test(input))
+							return 'Must be a numeric value (e.g., 42 or 13.5)';
+						return undefined;
+					};
+					return undefined;
+				}
+			});
 
 			const newField = new FieldItem(name, type, length, init);
 			fieldsProvider.addField(newField);
+
+			vscode.commands.executeCommand('setContext', 'rpgStructure.hasFields', fields.length > 0);
+
+		}),
+
+		// Clean Header ======================================================================================
+		vscode.commands.registerCommand('rpgStructure.cleanHeader', () => {
+
+			// Clean the header structure
+			header.name = '';
+			header.type = '';
+			header.dimension = 0;
+
+			// Refresh the provider
+			provider.refresh();
+
+			vscode.commands.executeCommand('setContext', 'rpgStructure.hasHeader',
+				(header.name !== '') && (header.dimension !== 0) && (header.type !== ''));
+
+		}),
+
+		// Clean Fields ======================================================================================
+		vscode.commands.registerCommand('rpgStructure.cleanFields', () => {
+
+			// Clean the fields
+			fields.length = 0;
+
+			// Clear the provider
+			fieldsProvider.refresh();
+
+			vscode.commands.executeCommand('setContext', 'rpgStructure.hasFields', fields.length > 0);
 
 		}),
 
 		// Create Structure ===============================================================================
 		vscode.commands.registerCommand('rpgStructure.generate', () => {
-			
-			// Check if the structure can be generated
-			// ?????
+
+			const editor = vscode.window.activeTextEditor;
+			const insertPosition = editor?.selection.active;
 
 			// Inserts the structure code
 			if (editor && insertPosition) {
 				handleInsert(editor, insertPosition, header.name, header.type, header.dimension.toString(), fields);
-				
-				// Clean data
-				header.name = '';
-				header.type = '';
-				header.dimension = 0;
-				fields.length = 0;
-
-				provider.refresh();
-				fieldsProvider.refresh();
-
 			};
 		})
 	);
 };
 
 // Deactivates the extension
-export function deactivate() { }
+export function deactivate() {
+
+};

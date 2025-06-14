@@ -12,4 +12,9 @@ export interface Field {
 	init : string  | undefined;
 };
 
-export let fields: Field[] = [];
+export let fields : Field[] = [];
+export let header : Header = {
+	name : "",
+	type : "",
+	dimension : 0
+};

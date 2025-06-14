@@ -8,7 +8,7 @@ v0.0.3
 - More information in the README.md.
 v0.0.4
 - A lot of changes (see "Added" for v0.0.4).
-v0.0.5
+v0.0.5&0.0.6
 - Bug corrections.
 
 ## Added
@@ -23,5 +23,5 @@ v0.0.4
 - Once the header data has been established and at least one field has been added, the structure can be exported to our code. It can be exported as many times as necessary, at any location within our code.
 - Once the structure has been exported, the structure data remains so that it can be exported again or modified if necessary (for now, only the header data).
 - New icon for the extension.
-v0.0.5
-- Minor changes.
+v0.0.5&v0.0.6
+- Minor changes and bug corrections.

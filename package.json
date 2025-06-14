@@ -8,7 +8,7 @@
     "url": "https://www.linkedin.com/in/christianlarsenvalverde/"
   },
   "publisher": "ChristianLarsen",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "repository": {
     "type": "git",
     "url": "https://github.com/christianlarsen/rpg-structure.git"
@@ -29,10 +29,6 @@
     "Programming Languages"
   ],
   "main": "./out/extension.js",
-  "activationEvents": [
-    "onLanguage:rpgle",
-    "onLanguage:sqlrpgle"
-  ],
   "contributes": {
     "languages": [
       {
@@ -62,7 +58,7 @@
           "id": "rpg-structure",
           "title": "RPG Structure",
           "icon": "assets/rpg-structure-icon.svg",
-          "when": "rpgStructure.showContainer"
+          "when": "true"
         }
       ]
     },
@@ -71,12 +67,12 @@
         {
           "id": "rpg-structure-header",
           "name": "Structure definition",
-          "when": "resourceExtname == .rpgle"
+          "when": "true"
         },
         {
           "id": "rpg-structure-fields",
           "name": "Fields",
-          "when": "resourceExtname == .rpgle || resourceExtname == .sqlrpgle"
+          "when": "true"
         }
       ]
     },

@@ -35,3 +35,7 @@ export function getInitPlaceholder(type: string): string {
 	};
 };
 
+export function updateContext(editor: vscode.TextEditor | undefined) {
+	const isRpgle = editor?.document.languageId === 'rpgle' || editor?.document.languageId === 'sqlrpgle';
+	vscode.commands.executeCommand('setContext', 'rpgstructure.showContainer', isRpgle);
+};

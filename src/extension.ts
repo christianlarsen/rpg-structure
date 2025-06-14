@@ -3,12 +3,17 @@
 */
 
 import * as vscode from 'vscode';
-import { handleInsert, getInitPlaceholder } from './extension-util';
+import { handleInsert, getInitPlaceholder, updateContext } from './extension-util';
 import { header, fields } from './rpg-structure-model';
 import { HeaderTreeDataProvider, StructureItem, FieldsTreeDataProvider, FieldItem } from './extension-providers';
 
 // Function that activates the extension
 export function activate(context: vscode.ExtensionContext) {
+
+	updateContext(vscode.window.activeTextEditor);
+	vscode.window.onDidChangeActiveTextEditor(editor => {
+		updateContext(editor);
+	});
 
 	// Editor and position to insert the code
 	let editor = vscode.window.activeTextEditor;
@@ -22,15 +27,10 @@ export function activate(context: vscode.ExtensionContext) {
 	const fieldsProvider = new FieldsTreeDataProvider();
 	vscode.window.registerTreeDataProvider('rpg-structure-fields', fieldsProvider)
 
-	// Activate the activity bar extension if the editor is "rpgle" or "sqlrpgle"
-	const isRpgle = editor?.document.languageId === 'rpgle' ||
-		editor?.document.languageId === 'sqlrpgle';
-	vscode.commands.executeCommand('setContext', 'rpgStructure.showContainer', isRpgle);
-
 	// Check if the editor has been changed, so maybe I have to remove the extension from the activity bar
 	vscode.window.onDidChangeActiveTextEditor(editor => {
 		const isRpgle = editor?.document.languageId === 'rpgle' || editor?.document.languageId === 'sqlrpgle';
-		vscode.commands.executeCommand('setContext', 'rpgstructure.showContainer', isRpgle);
+		// ???? vscode.commands.executeCommand('setContext', 'rpgstructure.showContainer', isRpgle);
 		editor = vscode.window.activeTextEditor;
 	});
 

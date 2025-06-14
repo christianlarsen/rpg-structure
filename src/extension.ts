@@ -10,6 +10,8 @@ import { HeaderTreeDataProvider, StructureItem, FieldsTreeDataProvider, FieldIte
 // Function that activates the extension
 export function activate(context: vscode.ExtensionContext) {
 
+	console.log("✅ RPG Structure extension activated");
+
 	updateContext(vscode.window.activeTextEditor);
 	vscode.window.onDidChangeActiveTextEditor(editor => {
 		updateContext(editor);

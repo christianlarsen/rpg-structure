@@ -28,12 +28,34 @@
   "categories": [
     "Programming Languages"
   ],
-  "activationEvents": [
-  "onLanguage:rpgle",
-  "onLanguage:sqlrpgle"
-  ],
   "main": "./out/extension.js",
+  "activationEvents": [
+    "onLanguage:rpgle",
+    "onLanguage:sqlrpgle"
+  ],
   "contributes": {
+    "languages": [
+      {
+        "id": "rpgle",
+        "aliases": [
+          "RPGLE"
+        ],
+        "extensions": [
+          ".rpgle"
+        ],
+        "configuration": "./language-configuration.json"
+      },
+      {
+        "id": "sqlrpgle",
+        "aliases": [
+          "SQLRPGLE"
+        ],
+        "extensions": [
+          ".sqlrpgle"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
     "viewsContainers": {
       "activitybar": [
         {
@@ -61,24 +83,24 @@
     "menus": {
       "view/title": [
         {
-          "command" : "rpgStructure.cleanHeader",
-          "when" : "view == rpg-structure-header",
-          "group" : "navigation"
+          "command": "rpgStructure.cleanHeader",
+          "when": "view == rpg-structure-header",
+          "group": "navigation"
         },
         {
-          "command" : "rpgStructure.cleanFields",
-          "when" : "view == rpg-structure-fields && rpgStructure.hasFields",
-          "group" : "navigation"
+          "command": "rpgStructure.cleanFields",
+          "when": "view == rpg-structure-fields && rpgStructure.hasFields",
+          "group": "navigation"
         },
         {
           "command": "rpgStructure.addField",
           "when": "view == rpg-structure-fields",
           "group": "navigation"
         },
-        { 
-          "command" : "rpgStructure.generate",
-          "when" : "view == rpg-structure-fields && rpgStructure.hasFields && rpgStructure.hasHeader",
-          "group" : "navigation"
+        {
+          "command": "rpgStructure.generate",
+          "when": "view == rpg-structure-fields && rpgStructure.hasFields && rpgStructure.hasHeader",
+          "group": "navigation"
         }
       ]
     },
@@ -107,7 +129,6 @@
         "category": "RPG Structure",
         "icon": "$(code-oss)"
       }
-
     ]
   },
   "scripts": {

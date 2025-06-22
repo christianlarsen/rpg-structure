@@ -1,5 +1,12 @@
+/*
+	Christian Larsen, 2025
+	"RPG structure"
+	extension-providers.ts
+*/
+
 import * as vscode from 'vscode';
 import { Field, fields, header } from './rpg-structure-model';
+import { reassignIdNumbers} from './extension-util';
 
 // Provider class for "Header" (structure data)
 export class HeaderTreeDataProvider implements vscode.TreeDataProvider<StructureItem> {
@@ -49,8 +56,6 @@ export class FieldsTreeDataProvider implements vscode.TreeDataProvider<vscode.Tr
     private _onDidChangeTreeData: vscode.EventEmitter<vscode.TreeItem | undefined | null | void> = new vscode.EventEmitter<vscode.TreeItem | undefined | null | void>();
     readonly onDidChangeTreeData: vscode.Event<vscode.TreeItem | undefined | null | void> = this._onDidChangeTreeData.event;
 
-    //private fields: FieldItem[] = [];
-
     getTreeItem(element: vscode.TreeItem): vscode.TreeItem {
         return element;
     };
@@ -58,29 +63,52 @@ export class FieldsTreeDataProvider implements vscode.TreeDataProvider<vscode.Tr
     getChildren(element?: vscode.TreeItem): Thenable<vscode.TreeItem[]> {
         if (!element) {
             return Promise.resolve(fields.map(f =>
-                new FieldItem(f.name, f.type, f.length, f.init)
+                new FieldItem(f.idNumber, f.name, f.type, f.length, f.init, f.isStructure, f.fields)
             ));
         }
 
-        if (element instanceof FieldItem) {
-            const children: vscode.TreeItem[] = [];
-
-            children.push(new FieldDetailItem(`Type: ${element.type}`));
-            if (element.length) {
-                children.push(new FieldDetailItem(`Length: ${element.length}`));
-            }
-            if (element.init) {
-                children.push(new FieldDetailItem(`Init: ${element.init}`));
-            }
-
+        if (element instanceof FieldItem && element.isStructure) {
+            
+            const children = element.fields.map(f =>
+                new FieldItem(f.idNumber, f.name, f.type, f.length, f.init, f.isStructure, f.fields)
+            );
             return Promise.resolve(children);
-        }
+        };
 
         return Promise.resolve([]);
     };
 
     addField(field: FieldItem) {
         fields.push(field);
+        this.refresh();
+    };
+
+    addFieldBefore(field: FieldItem, before: number) {
+        if (before <= 0) {
+            fields.unshift(field);
+        } else if (before >= fields.length) {
+            fields.push(field);
+        } else {
+            fields.splice(before, 0, field);
+        };
+
+        reassignIdNumbers(fields);
+
+        this.refresh();
+    };
+
+    addFieldStructure(fields: Field[], field : FieldItem, targetId: number) {
+        const parent = findFieldById(fields, targetId);
+    
+        if (!parent || !parent.isStructure) {
+            console.error("Target not found or not a structure");
+            return;
+        };
+    
+        parent.fields.push(field);
+    
+        reassignIdNumbers(fields); 
+
         this.refresh();
     };
 
@@ -97,15 +125,31 @@ export class FieldsTreeDataProvider implements vscode.TreeDataProvider<vscode.Tr
 // Class for the field data
 export class FieldItem extends vscode.TreeItem {
     constructor(
+        public idNumber: number,
         public name: string,
         public type: string,
         public length: string | undefined,
-        public init: string | undefined
+        public init: string | undefined,
+        public isStructure : boolean,
+        public fields: Field[]
     ) {
-        super(name, vscode.TreeItemCollapsibleState.Collapsed);
-        this.tooltip = `Field: ${name}`;
-        this.description = `${type}${length ? `(${length})` : ''}`;
 
+        const collapsibleState = isStructure
+            ? vscode.TreeItemCollapsibleState.Collapsed
+            : vscode.TreeItemCollapsibleState.None;
+
+        super(name, collapsibleState);
+        if (isStructure) {
+            this.contextValue = 'rpg-structure-structureItem';
+            this.iconPath = this.iconPath = new vscode.ThemeIcon('symbol-structure');
+            this.tooltip = `Substructure: ${name}`;
+            this.description = `${length ? `dim(${length})` : ''}`;
+        } else {
+            this.contextValue = 'rpg-structure-fieldItem';
+            this.iconPath = this.iconPath = new vscode.ThemeIcon('symbol-field');
+            this.tooltip = `Field: ${name}`;
+            this.description = `${type}${length ? `(${length})` : ''} ${init ? `inz(${init})` : ''}`;
+        };
     };
 };
 
@@ -121,5 +165,18 @@ export class FieldPropertyItem extends vscode.TreeItem {
         this.contextValue = 'fieldProperty';
     }
 };
+
+// Function that finds a "field" by IdNumber
+function findFieldById(fields: Field[], id: number): Field | null {
+	for (const field of fields) {
+		if (field.idNumber === id) return field;
+		if (field.isStructure) {
+			const found = findFieldById(field.fields, id);
+			if (found) return found;
+		};
+	};
+	return null;
+};
+
 
 

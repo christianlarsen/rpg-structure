@@ -8,7 +8,7 @@
     "url": "https://www.linkedin.com/in/christianlarsenvalverde/"
   },
   "publisher": "ChristianLarsen",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "repository": {
     "type": "git",
     "url": "https://github.com/christianlarsen/rpg-structure.git"
@@ -94,9 +94,26 @@
           "group": "navigation"
         },
         {
+          "command": "rpgStructure.addSubstructure",
+          "when": "view == rpg-structure-fields",
+          "group": "navigation"
+        },
+        {
           "command": "rpgStructure.generate",
           "when": "view == rpg-structure-fields && rpgStructure.hasFields && rpgStructure.hasHeader",
           "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "rpgStructure.addFieldToSubstructure",
+          "when": "view == rpg-structure-fields && viewItem == rpg-structure-structureItem",
+          "group": "inline"
+        },
+        {
+          "command": "rpgStructure.deleteField",
+          "when": "view == rpg-structure-fields && (viewItem == rpg-structure-fieldItem || viewItem == rpg-structure-structureItem)",
+          "group": "inline"
         }
       ]
     },
@@ -120,10 +137,27 @@
         "icon": "$(add)"
       },
       {
+        "command": "rpgStructure.addSubstructure",
+        "title": "Add Substructure",
+        "category": "RPG Structure",
+        "icon": "$(type-hierarchy-sub)"
+      },
+      {
         "command": "rpgStructure.generate",
         "title": "Generate Structure",
         "category": "RPG Structure",
         "icon": "$(code-oss)"
+      },
+      {
+        "command": "rpgStructure.addFieldToSubstructure",
+        "title": "Add Field to Substructure",
+        "icon": "$(insert)",
+        "category": "RPG Structure"
+      },
+      {
+        "command": "rpgStructure.deleteField",
+        "title": "Delete Field",
+        "icon": "$(close)"
       }
     ]
   },

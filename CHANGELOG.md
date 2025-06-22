@@ -25,3 +25,8 @@ v0.0.4
 - New icon for the extension.
 v0.0.5&v0.0.6
 - Minor changes and bug corrections.
+v0.0.7
+- More data types added.
+- Control over the name of fields, and length of the different types.
+- You can now create substructures (with a length or not).
+- You can now add fields to substructures.

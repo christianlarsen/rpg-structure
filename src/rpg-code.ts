@@ -1,9 +1,36 @@
+/*
+	Christian Larsen, 2025
+	"RPG structure"
+	rpg-code.ts
+*/
+
+import { Field } from './rpg-structure-model';
 
 // Generates the RPG code for the data-structure
-export function generateRpgCode(name: string, type: string, dimension: string, fields: { name: string, type: string, length: string, init?: string }[], position : number): string {
-	// Creates the "header" of the structure, always in lowecase, qualified
-	let header = `dcl-ds ${name} qualified`;
-	if (dimension.trim() && type.trim()) {
+export function generateRpgCode(
+	name: string,
+	type: string,
+	dimension: string | undefined,
+	fields: Field[],
+	line: number,
+	level: number,
+	baseIndent: string
+): string {
+	const tab : string = '   ';
+	let headIndent: string;
+	let subIndent: string;
+
+	if (line === 0 || level === 0) {
+		headIndent = baseIndent;
+		subIndent = baseIndent + `${tab}`;
+	} else {
+		headIndent = baseIndent + `${tab}`.repeat(level);
+		subIndent = baseIndent + `${tab}`.repeat(level + 1);
+	};
+
+	let header = `${headIndent}dcl-ds ${name}${level === 0 ? ' qualified' : ''}`;
+	
+	if (dimension && dimension.trim() && type.trim()) {
 		if (type.trim() === 'Default') {
 			header += ` dim(${dimension.trim()})`;
 		} else {
@@ -12,22 +39,22 @@ export function generateRpgCode(name: string, type: string, dimension: string, f
 	};
 	header += ';';
 
-	// To every line, I have to add "position" spaces before ...
-	const tab : string = ' '.repeat(position);
-
-	// Creates the "body"
 	const body = fields.map(f => {
-		let line = tab + `   ${f.name} ${f.type}`;
-		if (f.length?.trim()) {
-			line += `(${f.length})`;
+		if (f.isStructure) {
+			return generateRpgCode(f.name, 'Default', f.length, f.fields, line + 1, level + 1, baseIndent);
+		} else {
+			let line = `${subIndent}${f.name} ${f.type}`;
+			if (f.length?.trim()) {
+				line += `(${f.length})`;
+			}
+			if (f.init?.trim()) {
+				line += ` inz(${f.init.trim()})`;
+			}
+			return line + ';';
 		};
-		if (f.init?.trim()) {
-			line += ` inz(${f.init.trim()})`;
-		};
-		return line + ';';
 	});
 
-	// Returns the structure ending with "end-ds"
-	return [header, ...body, tab + 'end-ds;'].join('\n');
-    
-};
+	const footer = `${headIndent}end-ds;`;
+
+	return [header, ...body, footer].join('\n');
+}

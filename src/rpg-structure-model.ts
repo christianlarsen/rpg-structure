@@ -1,3 +1,8 @@
+/*
+	Christian Larsen, 2025
+	"RPG structure"
+	rpg-structure-model.ts
+*/
 
 export interface Header {
 	name : string;
@@ -6,10 +11,13 @@ export interface Header {
 };
 
 export interface Field {
+	idNumber : number;
 	name : string;
 	type : string;
-	length : string | undefined;
-	init : string  | undefined;
+	length? : string;
+	init? : string;
+	isStructure : boolean;
+	fields : Field[];
 };
 
 export let fields : Field[] = [];

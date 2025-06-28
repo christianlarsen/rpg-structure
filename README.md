@@ -18,7 +18,7 @@ The extension requires version 1.75 of VSCode.
 
 ## Known Issues
 
-- None at the moment.
+None at the moment.
 
 ## To Do
 
@@ -27,11 +27,8 @@ The extension requires version 1.75 of VSCode.
 - (TODO) Add a configuration option to choose the formatting style for the dcl-ds, end-ds, etc. keywords (e.g., DCL-DS, Dcl-ds, dcl-ds, End-ds, Qualified, qualified, ...).
 - (TODO) Add a configuration option to define the list of available data types.
 
-### 0.0.7
-v0.0.7
-- More data types added.
-- Control over the name of fields, and length of the different types.
-- You can now create substructures (with a length or not).
-- You can now add fields to substructures.
+### 0.0.8
+v0.0.8
+- It seems that the code hightlight was deactivated when using a SQLRPGLE source. It has been fixed.
 
 **Please leave a comment, and Enjoy!**

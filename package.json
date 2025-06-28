@@ -8,7 +8,7 @@
     "url": "https://www.linkedin.com/in/christianlarsenvalverde/"
   },
   "publisher": "ChristianLarsen",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "repository": {
     "type": "git",
     "url": "https://github.com/christianlarsen/rpg-structure.git"
@@ -31,26 +31,12 @@
   "main": "./out/extension.js",
   "contributes": {
     "languages": [
-      {
-        "id": "rpgle",
-        "aliases": [
-          "RPGLE"
-        ],
-        "extensions": [
-          ".rpgle"
-        ],
-        "configuration": "./language-configuration.json"
-      },
-      {
-        "id": "sqlrpgle",
-        "aliases": [
-          "SQLRPGLE"
-        ],
-        "extensions": [
-          ".sqlrpgle"
-        ],
-        "configuration": "./language-configuration.json"
-      }
+    {
+      "id": "rpgle",
+      "aliases": ["RPGLE", "SQLRPGLE"],
+      "extensions": [".rpgle", ".sqlrpgle"],
+      "configuration": "./language-configuration.json"
+    }
     ],
     "viewsContainers": {
       "activitybar": [

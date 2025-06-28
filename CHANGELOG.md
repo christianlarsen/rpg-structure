@@ -30,3 +30,5 @@ v0.0.7
 - Control over the name of fields, and length of the different types.
 - You can now create substructures (with a length or not).
 - You can now add fields to substructures.
+v0.0.8
+- Fixed problem with code hightlight in SQLRPGLE sources.

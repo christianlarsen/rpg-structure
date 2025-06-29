@@ -10,7 +10,7 @@ import { fields, Field } from './rpg-structure-model';
 import { FieldItem, FieldsTreeDataProvider } from './extension-providers';
 
 // Function that handles the insert of code into the code
-export function handleInsert(editor: vscode.TextEditor, position: vscode.Position, structureName: string, structureType: string, dimension: string, fields: any[]) {
+export function handleInsert(editor: vscode.TextEditor, position: vscode.Position, structureName: string, structureType: string, dimension: number|undefined, fields: any[]) {
 	
 	const insertPosition = editor.selection.active;  
 	const lineText = editor.document.lineAt(insertPosition.line).text;
@@ -70,13 +70,7 @@ export async function insertField(insubtructure: boolean, position: number, prov
 		}		
 	});
 	if (!name) return;
-/* TO-DO
-	const nameExists = fields.some(f => f.name.toLowerCase() === name.toLowerCase());
-	if (nameExists) {
-		vscode.window.showErrorMessage(`A field named "${name}" already exists.`);
-		return;
-	};
-*/
+
 	const type = await vscode.window.showQuickPick(
 		['char', 'varchar', 'int', 'packed', 'zoned', 'uns',
 		'date', 'time', 'timestamp', 'bin', 'ind', 'pointer'], 
@@ -85,7 +79,7 @@ export async function insertField(insubtructure: boolean, position: number, prov
 		});
 	if (!type) return;
 
-	let length: string | undefined;
+	let length: number | undefined;
 	if (['char', 'varchar', 'int', 'packed', 'zoned', 'uns', 'bin'].includes(type)) {
 		const lenStr = await vscode.window.showInputBox({
 			prompt: 'Field length',
@@ -106,7 +100,7 @@ export async function insertField(insubtructure: boolean, position: number, prov
 				return 'Invalid format';
 			}
 		});
-		length = lenStr;
+		length = Number(lenStr);
 	};
 
 	const init = await vscode.window.showInputBox({
@@ -118,7 +112,7 @@ export async function insertField(insubtructure: boolean, position: number, prov
 			if (type === 'char' || type === 'varchar') {
 				if (!/^'.*'$/.test(input)) return 'String must be enclosed in single quotes';
 				const content = input.slice(1, -1); // remove quotes
-				const maxLength = length ? parseInt(length.split(':')[0]) : 0;
+				const maxLength = length ? parseInt(length.toString().split(':')[0]) : 0;
 				if (content.length > maxLength) return `String too long (max ${maxLength} chars)`;
 				return undefined;
 			};
@@ -172,7 +166,7 @@ export async function insertSubstructure(provider: FieldsTreeDataProvider) {
 		return;
 	};
 
-	let length: string | undefined;
+	let length: number | undefined;
 	const lenStr = await vscode.window.showInputBox({
 		prompt: 'Structure length',
 		placeHolder: 'e.g. 100',
@@ -186,7 +180,11 @@ export async function insertSubstructure(provider: FieldsTreeDataProvider) {
 			return 'Invalid format: must be a number or empty';
 		}
 	});
-	length = lenStr || undefined;
+	if (lenStr) {
+		length = Number(lenStr);
+	} else {
+		length = undefined;
+	};
 
 	// Adds the "substructure" as a new field (marked as structure)
 	const newId = getNextIdNumber(fields);
@@ -274,3 +272,14 @@ export function getNextIdNumber(fields: Field[]): number {
 	return maxId + 1;
 };
 
+// Function that finds a "field" by IdNumber
+export function findFieldById(fields: Field[], id: number): Field | null {
+	for (const field of fields) {
+		if (field.idNumber === id) return field;
+		if (field.isStructure) {
+			const found = findFieldById(field.fields, id);
+			if (found) return found;
+		};
+	};
+	return null;
+};

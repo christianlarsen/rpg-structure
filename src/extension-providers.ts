@@ -6,7 +6,8 @@
 
 import * as vscode from 'vscode';
 import { Field, fields, header } from './rpg-structure-model';
-import { reassignIdNumbers} from './extension-util';
+import { reassignIdNumbers, findFieldById } from './extension-util';
+import { getConfiguration } from './extension-configuration';
 
 // Provider class for "Header" (structure data)
 export class HeaderTreeDataProvider implements vscode.TreeDataProvider<StructureItem> {
@@ -22,10 +23,19 @@ export class HeaderTreeDataProvider implements vscode.TreeDataProvider<Structure
         const items: StructureItem[] = [
             new StructureItem(`NAME: ${header.name || '(Required)'}`, 'name', 'symbol-text', vscode.TreeItemCollapsibleState.None),
             new StructureItem(`TYPE: ${header.type || '(Required)'}`, 'type', 'symbol-type-parameter', vscode.TreeItemCollapsibleState.None),
-            new StructureItem(`DIMENSION: ${header.dimension > 0 ? header.dimension.toString() : '(Required)'}`, 'dimension', 'symbol-unit', vscode.TreeItemCollapsibleState.None)
         ];
+        let dimensionLabel: string;
+        if (header.type === "template") {
+            dimensionLabel = "DIMENSION: (None)";
+        } else if (typeof header.dimension === "undefined" || header.dimension === 0) {
+            dimensionLabel = "DIMENSION: (Required)";
+        } else {
+            dimensionLabel = `DIMENSION: ${header.dimension}`;
+        };
+        items.push(new StructureItem(dimensionLabel, 'dimension', 'symbol-unit', vscode.TreeItemCollapsibleState.None));
+    
         return Promise.resolve(items);
-    };
+    };    
 
     refresh(): void {
         this._onDidChangeTreeData.fire(undefined);
@@ -128,7 +138,7 @@ export class FieldItem extends vscode.TreeItem {
         public idNumber: number,
         public name: string,
         public type: string,
-        public length: string | undefined,
+        public length: number | undefined,
         public init: string | undefined,
         public isStructure : boolean,
         public fields: Field[]
@@ -166,17 +176,45 @@ export class FieldPropertyItem extends vscode.TreeItem {
     }
 };
 
-// Function that finds a "field" by IdNumber
-function findFieldById(fields: Field[], id: number): Field | null {
-	for (const field of fields) {
-		if (field.idNumber === id) return field;
-		if (field.isStructure) {
-			const found = findFieldById(field.fields, id);
-			if (found) return found;
+export class ConfigItem extends vscode.TreeItem {
+	constructor(
+		public readonly label: string,
+		public readonly id: string,
+		public readonly collapsibleState: vscode.TreeItemCollapsibleState = vscode.TreeItemCollapsibleState.None
+	) {
+		super(label, collapsibleState);
+		this.contextValue = 'configItem';
+        this.command = {
+			command: 'rpgStructure.configuration.itemClick',
+			title: 'Edit Configuration Item',
+			arguments: [this]
 		};
+		this.iconPath = new vscode.ThemeIcon('symbol-string');
 	};
-	return null;
 };
+
+export class ConfigProvider implements vscode.TreeDataProvider<ConfigItem> {
+	private _onDidChangeTreeData: vscode.EventEmitter<ConfigItem | undefined | void> = new vscode.EventEmitter<ConfigItem | undefined | void>();
+	readonly onDidChangeTreeData: vscode.Event<ConfigItem | undefined | void> = this._onDidChangeTreeData.event;
+
+	refresh(): void {
+		this._onDidChangeTreeData.fire();
+	};
+
+	getTreeItem(element: ConfigItem): vscode.TreeItem {
+		return element;
+	};
+
+	getChildren(): Thenable<ConfigItem[]> {
+        const cfg = getConfiguration();
+
+        const items: ConfigItem[] = [
+		    new ConfigItem(`STRUCTURE FORMAT: ${cfg.structureFormat}`, 'structureFormat'),
+	    ];
+		return Promise.resolve(items);
+	};
+};
+
 
 
 

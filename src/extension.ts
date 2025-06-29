@@ -7,10 +7,13 @@
 import * as vscode from 'vscode';
 import { handleInsert, updateContext, deleteField, insertField, insertSubstructure, insertFieldSubstructure } from './extension-util';
 import { header, fields } from './rpg-structure-model';
-import { HeaderTreeDataProvider, StructureItem, FieldsTreeDataProvider, FieldItem } from './extension-providers';
+import { HeaderTreeDataProvider, StructureItem, FieldsTreeDataProvider, FieldItem, ConfigProvider, ConfigItem } from './extension-providers';
+import { loadConfiguration, saveConfiguration, currentConfiguration } from './extension-configuration';
 
 // Function that activates the extension
 export function activate(context: vscode.ExtensionContext) {
+
+	loadConfiguration(context);
 
 	updateContext(vscode.window.activeTextEditor);
 	vscode.window.onDidChangeActiveTextEditor(editor => {
@@ -23,7 +26,11 @@ export function activate(context: vscode.ExtensionContext) {
 
 	// "Fields" provider
 	const fieldsProvider = new FieldsTreeDataProvider();
-	vscode.window.registerTreeDataProvider('rpg-structure-fields', fieldsProvider)
+	vscode.window.registerTreeDataProvider('rpg-structure-fields', fieldsProvider);
+
+	// "Configuration" provider
+	const configProvider = new ConfigProvider();
+	vscode.window.registerTreeDataProvider('rpg-structure-configuration', configProvider);
 
 	// Check if the editor has been changed, so maybe I have to remove the extension from the activity bar
 	vscode.window.onDidChangeActiveTextEditor(editor => {
@@ -55,10 +62,15 @@ export function activate(context: vscode.ExtensionContext) {
 					break;
 
 				case 'dimension':
+					if (header.type === "template") {
+						vscode.window.showWarningMessage("A template structure cannot have a dimension.");
+						break;
+					};
+
 					const inputDimension = await vscode.window.showInputBox({
 						prompt: "Enter dimension for the structure",
 						placeHolder: "e.g. 10000",
-						value: header.dimension.toString()
+						value: header.dimension?.toString()
 					});
 					if (inputDimension === "") {
 						vscode.window.showErrorMessage("The dimension is required.");
@@ -73,20 +85,32 @@ export function activate(context: vscode.ExtensionContext) {
 
 				case 'type':
 					const inputType = await vscode.window.showQuickPick(
-						["Default", "*VAR", "*AUTO"],
+						["Default", "template", "*var", "*auto"],
 						{
-							placeHolder: "Select dimension for the structure",
+							placeHolder: "Select type for the structure",
 						});
 					if (inputType) {
 						header.type = inputType;
 						item.label = "TYPE: " + header.type;
+
+						// If type is "template", then dim must be removed
+						if (inputType === "template") {
+							header.dimension = undefined;	
+						};
 					};
 					provider.refresh();
 					break;
 			};
 			vscode.commands.executeCommand('setContext', 'rpgStructure.hasHeader',
-				(header.name !== '') && (header.dimension !== 0) && (header.type !== ''));
-
+				(
+					header.name !== '' && header.type !== '' &&
+					(
+						(header.type === 'template' && (!header.dimension || header.dimension === 0)) ||
+						(header.type !== 'template' && typeof header.dimension === 'number' && header.dimension > 0)
+					)
+				)
+			);
+			
 		}),
 
 		// Add Field ======================================================================================
@@ -140,7 +164,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 			// Inserts the structure code
 			if (editor && insertPosition) {
-				handleInsert(editor, insertPosition, header.name, header.type, header.dimension.toString(), fields);
+				handleInsert(editor, insertPosition, header.name, header.type, header.dimension, fields);
 			};
 		}),
 
@@ -154,6 +178,24 @@ export function activate(context: vscode.ExtensionContext) {
 		vscode.commands.registerCommand('rpgStructure.deleteField', (item: FieldItem) => {
 			// Deletes the selected item from the "fieldsProvider"
 			deleteField(item, fieldsProvider);
+		}),
+
+		// Configuration ==================================================================================
+		vscode.commands.registerCommand('rpgStructure.configuration.itemClick', async (item: ConfigItem) => {
+			switch (item.id) {
+				case 'structureFormat':
+					const format = await vscode.window.showQuickPick(['Dcl-ds', 'DCL-DS', 'dcl-ds'], {
+						placeHolder: 'Select structure format'
+					});
+					if (format) {
+						currentConfiguration.structureFormat = format;
+						saveConfiguration(context, currentConfiguration);
+					};
+
+					break;
+		
+			};
+			configProvider.refresh();
 		})
 	);
 };

@@ -32,3 +32,7 @@ v0.0.7
 - You can now add fields to substructures.
 v0.0.8
 - Fixed problem with code hightlight in SQLRPGLE sources.
+v0.0.9
+- New type of structure: templates.
+- New "configuration window":
+    You can save your preferred structure format (DCL-DS, Dcl-ds, dcl-ds).

@@ -4,18 +4,14 @@
 	rpg-code.ts
 */
 
-import { Field } from './rpg-structure-model';
+import { currentConfiguration } from './extension-configuration';
+import { Field, formatMap } from './rpg-structure-model';
 
 // Generates the RPG code for the data-structure
-export function generateRpgCode(
-	name: string,
-	type: string,
-	dimension: string | undefined,
-	fields: Field[],
-	line: number,
-	level: number,
-	baseIndent: string
-): string {
+export function generateRpgCode(name: string, type: string, dimension: number | undefined,
+	fields: Field[], line: number, level: number,baseIndent: string) : string {
+
+	const format = formatMap[currentConfiguration.structureFormat];
 	const tab : string = '   ';
 	let headIndent: string;
 	let subIndent: string;
@@ -28,14 +24,24 @@ export function generateRpgCode(
 		subIndent = baseIndent + `${tab}`.repeat(level + 1);
 	};
 
-	let header = `${headIndent}dcl-ds ${name}${level === 0 ? ' qualified' : ''}`;
+	let header = `${headIndent}${format.dclds} ${name}${level === 0 ? ` ${format.qualified}` : ''}`;
 	
-	if (dimension && dimension.trim() && type.trim()) {
+	if (dimension && dimension.toString().trim() && type.trim()) {
 		if (type.trim() === 'Default') {
-			header += ` dim(${dimension.trim()})`;
+			header += ` dim(${dimension.toString().trim()})`;
 		} else {
-			header += ` dim(${type.toLowerCase().trim()}:${dimension.trim()})`;
+			switch(type) {
+				case '*var' :
+					header += ` ${format.dimx}(${format.varx}:${dimension.toString().trim()})`;
+					break;
+				case '*auto' :
+					header += ` ${format.dimx}(${format.autox}:${dimension.toString().trim()})`;
+					break;
+			};
 		};
+	};
+	if (type === 'template' && line === 0 && level === 0) {
+		header += ` ${format.template}`;
 	};
 	header += ';';
 
@@ -43,18 +49,19 @@ export function generateRpgCode(
 		if (f.isStructure) {
 			return generateRpgCode(f.name, 'Default', f.length, f.fields, line + 1, level + 1, baseIndent);
 		} else {
-			let line = `${subIndent}${f.name} ${f.type}`;
-			if (f.length?.trim()) {
+			const typeUsed = format.typeMap[f.type] ?? f.type;
+			let line = `${subIndent}${f.name} ${typeUsed}`;
+			if (f.length?.toString().trim()) {
 				line += `(${f.length})`;
 			}
 			if (f.init?.trim()) {
-				line += ` inz(${f.init.trim()})`;
+				line += ` ${format.inz}(${f.init.trim()})`;
 			}
 			return line + ';';
 		};
 	});
 
-	const footer = `${headIndent}end-ds;`;
+	const footer = `${headIndent}${format.endds};`;
 
 	return [header, ...body, footer].join('\n');
 }

@@ -8,7 +8,7 @@
     "url": "https://www.linkedin.com/in/christianlarsenvalverde/"
   },
   "publisher": "ChristianLarsen",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "repository": {
     "type": "git",
     "url": "https://github.com/christianlarsen/rpg-structure.git"
@@ -50,6 +50,11 @@
     },
     "views": {
       "rpg-structure": [
+        {
+          "id" : "rpg-structure-configuration",
+          "name" : "Configuration",
+          "when" : "true"
+        },
         {
           "id": "rpg-structure-header",
           "name": "Structure definition",
@@ -100,6 +105,11 @@
           "command": "rpgStructure.deleteField",
           "when": "view == rpg-structure-fields && (viewItem == rpg-structure-fieldItem || viewItem == rpg-structure-structureItem)",
           "group": "inline"
+        },
+        {
+          "command" : "rpgStructure.configuration",
+          "when" : "view == rpgStructureConfig && viewItem == configItem",
+          "group" : "inline"
         }
       ]
     },
@@ -144,7 +154,13 @@
         "command": "rpgStructure.deleteField",
         "title": "Delete Field",
         "icon": "$(close)"
+      },
+      {
+        "command": "rpgStructure.configuration",
+        "title": "Configuration",
+        "icon": "$(close)"
       }
+
     ]
   },
   "scripts": {

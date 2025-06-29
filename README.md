@@ -24,11 +24,12 @@ None at the moment.
 
 - (TODO) Add support for comments on structures and structure fields.
 - (TODO) Add a configuration option to define the number of characters used for indentation.
-- (TODO) Add a configuration option to choose the formatting style for the dcl-ds, end-ds, etc. keywords (e.g., DCL-DS, Dcl-ds, dcl-ds, End-ds, Qualified, qualified, ...).
 - (TODO) Add a configuration option to define the list of available data types.
 
-### 0.0.8
-v0.0.8
-- It seems that the code hightlight was deactivated when using a SQLRPGLE source. It has been fixed.
+### 0.0.9
+v0.0.9
+- New type of structures: template.
+- New configuracion window: you can now save your preferred structure format (DCL-DS, Dcl-ds, dcl-ds).
+  (if you select DCL-DS, then DCL-DS, END-DS, QUALIFIED, TEMPLATE ... will be used; in case you select Dcl-ds, then Dcl-ds, End-ds, Qualified, Template ... will be used)
 
 **Please leave a comment, and Enjoy!**

@@ -27,7 +27,7 @@ export class HeaderTreeDataProvider implements vscode.TreeDataProvider<Structure
         let dimensionLabel: string;
         if (header.type === "template") {
             dimensionLabel = "DIMENSION: (None)";
-        } else if (typeof header.dimension === "undefined" || header.dimension === 0) {
+        } else if (typeof header.dimension === "undefined" || header.dimension === '0') {
             dimensionLabel = "DIMENSION: (Required)";
         } else {
             dimensionLabel = `DIMENSION: ${header.dimension}`;
@@ -73,14 +73,14 @@ export class FieldsTreeDataProvider implements vscode.TreeDataProvider<vscode.Tr
     getChildren(element?: vscode.TreeItem): Thenable<vscode.TreeItem[]> {
         if (!element) {
             return Promise.resolve(fields.map(f =>
-                new FieldItem(f.idNumber, f.name, f.type, f.length, f.init, f.isStructure, f.fields)
+                new FieldItem(f.idNumber, f.name, f.type, f.length, f.init, f.dim, f.isStructure, f.fields)
             ));
         }
 
         if (element instanceof FieldItem && element.isStructure) {
             
             const children = element.fields.map(f =>
-                new FieldItem(f.idNumber, f.name, f.type, f.length, f.init, f.isStructure, f.fields)
+                new FieldItem(f.idNumber, f.name, f.type, f.length, f.init, f.dim, f.isStructure, f.fields)
             );
             return Promise.resolve(children);
         };
@@ -138,8 +138,9 @@ export class FieldItem extends vscode.TreeItem {
         public idNumber: number,
         public name: string,
         public type: string,
-        public length: number | undefined,
+        public length: string | undefined,
         public init: string | undefined,
+        public dim: number | undefined,
         public isStructure : boolean,
         public fields: Field[]
     ) {
@@ -158,7 +159,7 @@ export class FieldItem extends vscode.TreeItem {
             this.contextValue = 'rpg-structure-fieldItem';
             this.iconPath = this.iconPath = new vscode.ThemeIcon('symbol-field');
             this.tooltip = `Field: ${name}`;
-            this.description = `${type}${length ? `(${length})` : ''} ${init ? `inz(${init})` : ''}`;
+            this.description = `${type}${length ? `(${length})` : ''}${dim ? ` dim(${dim})` : ``}${init ? ` inz(${init})` : ''}`;
         };
     };
 };
@@ -210,6 +211,7 @@ export class ConfigProvider implements vscode.TreeDataProvider<ConfigItem> {
 
         const items: ConfigItem[] = [
 		    new ConfigItem(`STRUCTURE FORMAT: ${cfg.structureFormat}`, 'structureFormat'),
+            new ConfigItem(`INDENTATION: ${cfg.indentation?.toString()}`, 'structureIndentation')
 	    ];
 		return Promise.resolve(items);
 	};

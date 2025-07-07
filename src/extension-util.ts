@@ -10,7 +10,7 @@ import { fields, Field } from './rpg-structure-model';
 import { FieldItem, FieldsTreeDataProvider } from './extension-providers';
 
 // Function that handles the insert of code into the code
-export function handleInsert(editor: vscode.TextEditor, position: vscode.Position, structureName: string, structureType: string, dimension: number|undefined, fields: any[]) {
+export function handleInsert(editor: vscode.TextEditor, position: vscode.Position, structureName: string, structureType: string, dimension: string|undefined, fields: any[]) {
 	
 	const insertPosition = editor.selection.active;  
 	const lineText = editor.document.lineAt(insertPosition.line).text;
@@ -79,7 +79,7 @@ export async function insertField(insubtructure: boolean, position: number, prov
 		});
 	if (!type) return;
 
-	let length: number | undefined;
+	let length: string | undefined;
 	if (['char', 'varchar', 'int', 'packed', 'zoned', 'uns', 'bin'].includes(type)) {
 		const lenStr = await vscode.window.showInputBox({
 			prompt: 'Field length',
@@ -100,14 +100,35 @@ export async function insertField(insubtructure: boolean, position: number, prov
 				return 'Invalid format';
 			}
 		});
-		length = Number(lenStr);
+		if (lenStr) {
+			length = lenStr.trim(); // guarda como string, sea "10" o "13:2"
+		};
 	};
 
+	let dim: number | undefined;
+	const dimStr = await vscode.window.showInputBox({
+		prompt: 'Dimension length (optional)',
+		placeHolder: 'e.g. 100',
+		validateInput: (input) => {
+			if (input.trim() === '') return undefined; 
+	
+			if (!/^\d+$/.test(input)) {
+				return 'Please enter a positive integer';
+			};
+	
+			return undefined; 
+		}
+	});
+	
+	if (dimStr?.trim() !== '') {
+		dim = Number(dimStr);
+	};
+	
 	const init = await vscode.window.showInputBox({
 		prompt: 'Init value (optional)',
 		placeHolder: getInitPlaceholder(type),
 		validateInput: (input) => {
-			if (!input) return undefined; // opcional
+			if (!input) return undefined; 
 
 			if (type === 'char' || type === 'varchar') {
 				if (!/^'.*'$/.test(input)) return 'String must be enclosed in single quotes';
@@ -139,11 +160,11 @@ export async function insertField(insubtructure: boolean, position: number, prov
 
 	if (!insubtructure) {
 		const newId = getNextIdNumber(fields);
-		const newField = new FieldItem(newId, name, type, length, init, false, []);
+		const newField = new FieldItem(newId, name, type, length, init, dim, false, []);
 		provider.addFieldBefore(newField, position);
 	} else {
 		const newId = getNextIdNumber(fields);
-		const newField = new FieldItem(newId, name, type, length, init, false, []);
+		const newField = new FieldItem(newId, name, type, length, init, dim, false, []);
 		provider.addFieldStructure(fields, newField, position);
 	};
 
@@ -166,7 +187,7 @@ export async function insertSubstructure(provider: FieldsTreeDataProvider) {
 		return;
 	};
 
-	let length: number | undefined;
+	let length: string | undefined;
 	const lenStr = await vscode.window.showInputBox({
 		prompt: 'Structure length',
 		placeHolder: 'e.g. 100',
@@ -181,14 +202,12 @@ export async function insertSubstructure(provider: FieldsTreeDataProvider) {
 		}
 	});
 	if (lenStr) {
-		length = Number(lenStr);
-	} else {
-		length = undefined;
+		length = lenStr.trim(); 
 	};
 
 	// Adds the "substructure" as a new field (marked as structure)
 	const newId = getNextIdNumber(fields);
-	const newField = new FieldItem(newId, name, '', length, undefined, true, []);
+	const newField = new FieldItem(newId, name, '', length, undefined, undefined, true, []);
 	provider.addField(newField);
 
 	vscode.commands.executeCommand('setContext', 'rpgStructure.hasFields', fields.length > 0);

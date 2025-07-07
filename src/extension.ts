@@ -70,15 +70,19 @@ export function activate(context: vscode.ExtensionContext) {
 					const inputDimension = await vscode.window.showInputBox({
 						prompt: "Enter dimension for the structure",
 						placeHolder: "e.g. 10000",
-						value: header.dimension?.toString()
+						value: header.dimension ?? ""
 					});
 					if (inputDimension === "") {
 						vscode.window.showErrorMessage("The dimension is required.");
 						break;
 					};
 					if (inputDimension !== undefined) {
-						header.dimension = parseInt(inputDimension);
-						item.label = "DIMENSION: " + header.dimension.toString();
+						if (!/^\d+$/.test(inputDimension)) {
+							vscode.window.showErrorMessage("Dimension must be a positive integer.");
+							break;
+						};
+						header.dimension = inputDimension; 
+						item.label = "DIMENSION: " + inputDimension;
 					};
 					provider.refresh();
 					break;
@@ -105,8 +109,8 @@ export function activate(context: vscode.ExtensionContext) {
 				(
 					header.name !== '' && header.type !== '' &&
 					(
-						(header.type === 'template' && (!header.dimension || header.dimension === 0)) ||
-						(header.type !== 'template' && typeof header.dimension === 'number' && header.dimension > 0)
+						(header.type === 'template' && (!header.dimension || header.dimension === '0')) ||
+						(header.type !== 'template' && typeof header.dimension === 'string' && header.dimension.length > 0)
 					)
 				)
 			);
@@ -131,14 +135,14 @@ export function activate(context: vscode.ExtensionContext) {
 			// Cleans the header structure
 			header.name = '';
 			header.type = '';
-			header.dimension = 0;
+			header.dimension = '0';
 
 			// Refresh the provider
 			provider.refresh();
 
 			// Sets "rpgStructure.hasHeader" to true or false
 			vscode.commands.executeCommand('setContext', 'rpgStructure.hasHeader',
-				(header.name !== '') && (header.dimension !== 0) && (header.type !== ''));
+				(header.name !== '') && (header.dimension !== '0') && (header.type !== ''));
 
 		}),
 
@@ -193,7 +197,29 @@ export function activate(context: vscode.ExtensionContext) {
 					};
 
 					break;
-		
+
+				case 'structureIndentation':
+					const indentation = await vscode.window.showInputBox({
+						placeHolder: 'Enter number of spaces for indentation (1–10)',
+						prompt: 'Choose how many spaces to use for indentation',
+						validateInput: (value) => {
+							const num = Number(value);
+							if (!/^\d+$/.test(value)) {
+								return 'Only numbers are allowed';
+							}
+							if (num < 1 || num > 10) {
+								return 'Please enter a number between 1 and 10';
+							}
+							return null;
+						}
+					});
+					if (indentation) {
+						currentConfiguration.indentation = Number(indentation);
+						saveConfiguration(context, currentConfiguration);
+					};
+	
+					break;
+			
 			};
 			configProvider.refresh();
 		})

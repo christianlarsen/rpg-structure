@@ -1,11 +1,15 @@
 # RPG-structure
 
-This is an extension that can be used for generating full free RPG qualified data structures, with *auto, *var, or default type, with the subfields you need.
+This is an extension that can be used for generating full free RPG qualified data structures. 
+
+The format can be default, template, *auto, or *var, with the subfields and substructures you need.
 
 ## Features
 
-The extension allows you to insert a name for the structure, a dimension, a type (*auto, *var, or default). For the fields, you can insert the name, the type, and size (these three fields are required), and a possible init value.
-The code of the structure in free RPG is inserted in the place of the code where you execute the extension.
+The extension allows you to insert a name for the structure, a dimension, a type (default, template, *auto or *var). For the fields, you can insert the name, the type, and size (these three fields are required), and a possible init value.
+You can also add a substructure, and fields into it.
+Once you have filled the mininum data, you can insert it into your code.
+You can set if you want to write the declaration (and other things...), with the format: Dcl-ds, dcl-ds, DCL-DS ... (configuration window).
 
 ## How to use
 
@@ -23,13 +27,11 @@ None at the moment.
 ## To Do
 
 - (TODO) Add support for comments on structures and structure fields.
-- (TODO) Add a configuration option to define the number of characters used for indentation.
 - (TODO) Add a configuration option to define the list of available data types.
 
-### 0.0.9
-v0.0.9
-- New type of structures: template.
-- New configuracion window: you can now save your preferred structure format (DCL-DS, Dcl-ds, dcl-ds).
-  (if you select DCL-DS, then DCL-DS, END-DS, QUALIFIED, TEMPLATE ... will be used; in case you select Dcl-ds, then Dcl-ds, End-ds, Qualified, Template ... will be used)
+### 0.0.10
+v0.0.10
+- New possibility of declaring dimensional types.
+- Bug fixes.
 
 **Please leave a comment, and Enjoy!**

@@ -1,17 +1,6 @@
 # Change Log
 
-## Changed
-v0.0.2
-- Different structure of the project.
-v0.0.3
-- Internal changes.
-- More information in the README.md.
-v0.0.4
-- A lot of changes (see "Added" for v0.0.4).
-v0.0.5&0.0.6
-- Bug corrections.
-
-## Added
+## Added & Changed
 v0.0.2
 - The code is inserted from the place it was executed (also if the position is not the first column of the code).
 v0.0.3
@@ -36,3 +25,5 @@ v0.0.9
 - New type of structure: templates.
 - New "configuration window":
     You can save your preferred structure format (DCL-DS, Dcl-ds, dcl-ds).
+v0.0.10
+- New possibility of declaring dimensional types.

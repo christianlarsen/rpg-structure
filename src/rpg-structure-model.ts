@@ -7,15 +7,16 @@
 export interface Header {
 	name : string;
 	type : string;
-	dimension : number|undefined;
+	dimension? : string;
 };
 
 export interface Field {
 	idNumber : number;
 	name : string;
 	type : string;
-	length? : number;
+	length? : string;
 	init? : string;
+	dim? : number;
 	isStructure : boolean;
 	fields : Field[];
 };
@@ -24,7 +25,7 @@ export let fields : Field[] = [];
 export let header : Header = {
 	name : "",
 	type : "",
-	dimension : 0
+	dimension : '0'
 };
 
 export interface RpgFormat {

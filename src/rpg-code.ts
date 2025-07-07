@@ -8,13 +8,17 @@ import { currentConfiguration } from './extension-configuration';
 import { Field, formatMap } from './rpg-structure-model';
 
 // Generates the RPG code for the data-structure
-export function generateRpgCode(name: string, type: string, dimension: number | undefined,
+export function generateRpgCode(name: string, type: string, dimension: string | undefined,
 	fields: Field[], line: number, level: number,baseIndent: string) : string {
 
 	const format = formatMap[currentConfiguration.structureFormat];
-	const tab : string = '   ';
+	let tab : string = '   ';
 	let headIndent: string;
 	let subIndent: string;
+
+	if (currentConfiguration.indentation) {
+		tab = ' '.repeat(currentConfiguration.indentation);
+	};
 
 	if (line === 0 || level === 0) {
 		headIndent = baseIndent;
@@ -28,7 +32,7 @@ export function generateRpgCode(name: string, type: string, dimension: number | 
 	
 	if (dimension && dimension.toString().trim() && type.trim()) {
 		if (type.trim() === 'Default') {
-			header += ` dim(${dimension.toString().trim()})`;
+			header += ` ${format.dimx}(${dimension.toString().trim()})`;
 		} else {
 			switch(type) {
 				case '*var' :
@@ -53,10 +57,13 @@ export function generateRpgCode(name: string, type: string, dimension: number | 
 			let line = `${subIndent}${f.name} ${typeUsed}`;
 			if (f.length?.toString().trim()) {
 				line += `(${f.length})`;
-			}
+			};
 			if (f.init?.trim()) {
 				line += ` ${format.inz}(${f.init.trim()})`;
-			}
+			};
+			if (f.dim?.toString().trim()) {
+				line += ` ${format.dimx}(${f.dim})`;
+			};
 			return line + ';';
 		};
 	});

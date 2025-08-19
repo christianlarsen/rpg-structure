@@ -27,3 +27,5 @@ v0.0.9
     You can save your preferred structure format (DCL-DS, Dcl-ds, dcl-ds).
 v0.0.10
 - New possibility of declaring dimensional types.
+v0.0.11
+- Error fixes (NaN dimension generation).

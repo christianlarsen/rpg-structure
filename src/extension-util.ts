@@ -110,18 +110,22 @@ export async function insertField(insubtructure: boolean, position: number, prov
 		prompt: 'Dimension length (optional)',
 		placeHolder: 'e.g. 100',
 		validateInput: (input) => {
-			if (input.trim() === '') return undefined; 
-	
-			if (!/^\d+$/.test(input)) {
+			const trimmed = input.trim();
+
+			if (trimmed === '') return undefined;
+
+			if (!/^\d+$/.test(trimmed)) {
 				return 'Please enter a positive integer';
-			};
-	
+			};	
 			return undefined; 
 		}
 	});
 	
-	if (dimStr?.trim() !== '') {
-		dim = Number(dimStr);
+	if (dimStr) {
+		const parsed = Number(dimStr.trim());
+		if (!isNaN(parsed)) {
+			dim = parsed;
+		};
 	};
 	
 	const init = await vscode.window.showInputBox({

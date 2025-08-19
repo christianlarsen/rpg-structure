@@ -29,9 +29,8 @@ None at the moment.
 - (TODO) Add support for comments on structures and structure fields.
 - (TODO) Add a configuration option to define the list of available data types.
 
-### 0.0.10
-v0.0.10
-- New possibility of declaring dimensional types.
+### 0.0.11
+v0.0.11
 - Bug fixes.
 
 **Please leave a comment, and Enjoy!**

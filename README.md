@@ -1,36 +1,88 @@
-# RPG-structure
+# RPG Structure
 
-This is an extension that can be used for generating full free RPG qualified data structures. 
+A Visual Studio Code extension to generate **free-format RPG qualified data structures** for IBM i.
 
-The format can be default, template, *auto, or *var, with the subfields and substructures you need.
+With RPG Structure, you can quickly design structures, templates, and substructures, then export them directly into your RPGLE or SQLRPGLE code.
+
+---
 
 ## Features
 
-The extension allows you to insert a name for the structure, a dimension, a type (default, template, *auto or *var). For the fields, you can insert the name, the type, and size (these three fields are required), and a possible init value.
-You can also add a substructure, and fields into it.
-Once you have filled the mininum data, you can insert it into your code.
-You can set if you want to write the declaration (and other things...), with the format: Dcl-ds, dcl-ds, DCL-DS ... (configuration window).
+- Define structure headers with:
+  - Name
+  - Type (`default`, `template`, `*auto`, `*var`)
+  - Dimension
+- Add fields with:
+  - Name (required)
+  - Type (required, chosen from a predefined list)
+  - Size (required, properly formatted)
+  - Initialization value (optional)
+- Create **substructures** and add fields inside them.
+- Export your structure to the active editor at any position.
+- Configure preferred format for declarations (`Dcl-ds`, `dcl-ds`, `DCL-DS`).
+- Support for **templates** and **dimensional types**.
 
-## How to use
+---
 
-Once active, if you have a RPGLE or SQLRPGLE active editor, you can press the icon (if visible) on the activity bar.
-Then you can add your structure data ("header"), and the different fields ("fields"). Then you can press the button to insert the structure on your code, in the place you need.
+## Installation
+
+1. Open **Visual Studio Code**.
+2. Go to **Extensions** (`Ctrl+Shift+X` or `Cmd+Shift+X`).
+3. Search for **RPG Structure**.
+4. Click **Install**.
+
+---
+
+## Usage
+
+1. Open a **RPGLE** or **SQLRPGLE** source in the editor.
+2. Click the **RPG Structure** icon in the Activity Bar.
+3. Enter your structure header information (name, type, dimension).
+4. Add fields and optional substructures.
+5. Click **Insert** to export the structure into your code.
+
+---
 
 ## Requirements
 
-The extension requires version 1.75 of VSCode.
+- Visual Studio Code **v1.75** or higher.
+- A RPGLE or SQLRPGLE source open in the editor.
+
+---
 
 ## Known Issues
 
-None at the moment.
+- None at the moment.
 
-## To Do
+---
 
-- (TODO) Add support for comments on structures and structure fields.
-- (TODO) Add a configuration option to define the list of available data types.
+## Roadmap
 
-### 0.0.11
-v0.0.11
-- Bug fixes.
+- [ ] Add support for comments on structures and fields.
+- [ ] Add configuration options to define the list of available data types.
 
-**Please leave a comment, and Enjoy!**
+---
+
+## Release Notes
+
+### [1.0.0] - 2025-08-24
+- First stable release with templates, dimensional types, substructures, and configuration options.
+
+See the [Changelog](./CHANGELOG.md) for the complete history.
+
+---
+
+## Contributing
+
+Issues and pull requests are welcome!  
+Please open an issue on [GitHub](https://github.com/tuusuario/rpg-structure) with any suggestions or bug reports.
+
+---
+
+## License
+
+This extension is licensed under the [MIT License](./LICENSE).
+
+---
+
+**Enjoy using RPG Structure! 🚀**

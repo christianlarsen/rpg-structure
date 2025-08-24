@@ -1,31 +1,64 @@
-# Change Log
+# Changelog
 
-## Added & Changed
-v0.0.2
-- The code is inserted from the place it was executed (also if the position is not the first column of the code).
-v0.0.3
-- Added extension to the activity bar.
-v0.0.4
-- The extension's interface has been completely modified: now, instead of in a webview, it appears in the panel once the activity bar icon is clicked.
-- The structure's header data can be modified at any time: name, type, and dimension. They can also be reset at any time.
-- Fields can be added to the structure using the "Add" button. Each field has a name, type (which can be selected from a number of predetermined types), size (which must be formatted appropriately), and an initialization (optional, but must be formatted appropriately). Fields can be initialized at any time.
-- Once the header data has been established and at least one field has been added, the structure can be exported to our code. It can be exported as many times as necessary, at any location within our code.
-- Once the structure has been exported, the structure data remains so that it can be exported again or modified if necessary (for now, only the header data).
-- New icon for the extension.
-v0.0.5&v0.0.6
-- Minor changes and bug corrections.
-v0.0.7
-- More data types added.
-- Control over the name of fields, and length of the different types.
-- You can now create substructures (with a length or not).
-- You can now add fields to substructures.
-v0.0.8
-- Fixed problem with code hightlight in SQLRPGLE sources.
-v0.0.9
-- New type of structure: templates.
-- New "configuration window":
-    You can save your preferred structure format (DCL-DS, Dcl-ds, dcl-ds).
-v0.0.10
-- New possibility of declaring dimensional types.
-v0.0.11
+All notable changes to this project will be documented in this file.  
+This project follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
+
+## [1.0.0] - 2025-08-24
+### Added
+- First stable release.
+- Support for structures, templates, and dimensional types.
+- Ability to add substructures and subfields.
+- Configuration window to choose preferred format (`Dcl-ds`, `dcl-ds`, `DCL-DS`).
+- Control over field names, lengths, and initialization values.
+- Export structures into RPGLE and SQLRPGLE sources at any cursor position.
+- New extension icon.
+
+### Fixed
+- Various bug fixes, including issues with NaN dimension generation and SQLRPGLE syntax highlighting.
+
+---
+
+## [0.0.11] - 2025-08-20
+### Fixed
 - Error fixes (NaN dimension generation).
+
+## [0.0.10] - 2025-08-15
+### Added
+- Support for declaring dimensional types.
+
+## [0.0.9] - 2025-08-10
+### Added
+- New type of structure: templates.
+- Configuration window to save preferred structure format.
+
+## [0.0.8] - 2025-08-05
+### Fixed
+- Fixed problem with code highlighting in SQLRPGLE sources.
+
+## [0.0.7] - 2025-08-01
+### Added
+- More data types.
+- Control over field names and lengths.
+- Ability to create substructures (with or without length).
+- Ability to add fields inside substructures.
+
+## [0.0.5] & [0.0.6] - 2025-07-28
+### Fixed
+- Minor changes and bug corrections.
+
+## [0.0.4] - 2025-07-25
+### Changed
+- Extension interface redesigned: now appears in a panel when clicking the activity bar icon.
+- Structure header data (name, type, dimension) can be modified or reset anytime.
+- Fields can be added with name, type, size, and optional initialization.
+- Structures can be exported multiple times at any location in the code.
+- Structure data remains after export (header data can be modified).
+- New extension icon.
+
+## [0.0.3] - 2025-07-22
+### Added
+- Extension added to the activity bar.
+
+## [0.0.2] - 2025-07-20
+### Changed
+- Code insertion improved: now works from the execution point, even if not at the first column.

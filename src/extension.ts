@@ -5,228 +5,382 @@
 */
 
 import * as vscode from 'vscode';
-import { handleInsert, updateContext, deleteField, insertField, insertSubstructure, insertFieldSubstructure } from './extension-util';
-import { header, fields } from './rpg-structure-model';
-import { HeaderTreeDataProvider, StructureItem, FieldsTreeDataProvider, FieldItem, ConfigProvider, ConfigItem } from './extension-providers';
-import { loadConfiguration, saveConfiguration, currentConfiguration } from './extension-configuration';
+import { handleInsert, updateContext, deleteField, insertField, insertSubstructure, insertFieldSubstructure } from './rpg-structure.utils';
+import { HeaderTreeDataProvider, StructureItem, FieldsTreeDataProvider, FieldItem, ConfigProvider, ConfigItem } from './rpg-structure.providers';
+import { loadConfiguration, saveConfiguration, currentConfiguration } from './rpg-structure.configuration';
+import { header, fields, COMMANDS, TREE_DATA_PROVIDERS, StructureFormat, StructureType } from './rpg-structure.model';
+import { isPositiveInteger, updateHeaderContext, updateFieldsContext } from './rpg-structure.helper';
 
-// Function that activates the extension
-export function activate(context: vscode.ExtensionContext) {
-
-	loadConfiguration(context);
-
-	updateContext(vscode.window.activeTextEditor);
-	vscode.window.onDidChangeActiveTextEditor(editor => {
-		updateContext(editor);
-	});
-
-	// "Header" provider
-	const provider = new HeaderTreeDataProvider();
-	vscode.window.registerTreeDataProvider('rpg-structure-header', provider);
-
-	// "Fields" provider
-	const fieldsProvider = new FieldsTreeDataProvider();
-	vscode.window.registerTreeDataProvider('rpg-structure-fields', fieldsProvider);
-
-	// "Configuration" provider
-	const configProvider = new ConfigProvider();
-	vscode.window.registerTreeDataProvider('rpg-structure-configuration', configProvider);
-
-	// Check if the editor has been changed, so maybe I have to remove the extension from the activity bar
-	vscode.window.onDidChangeActiveTextEditor(editor => {
-		editor = vscode.window.activeTextEditor;
-	});
-
-	// Subscriptions (commands)
-	context.subscriptions.push(
-
-		// Structure data =================================================================================
-		vscode.commands.registerCommand('rpgStructure.itemClick', async (item: StructureItem) => {
-
-			switch (item.id) {
-				case 'name':
-					const inputName = await vscode.window.showInputBox({
-						prompt: "Enter a name for the structure",
-						placeHolder: "e.g. structure",
-						value: header.name
-					});
-					if (inputName === "") {
-						vscode.window.showErrorMessage("The name is required.");
-						break;
-					};
-					if (inputName !== undefined) {
-						header.name = inputName;
-						item.label = "NAME: " + header.name;
-					};
-					provider.refresh();
-					break;
-
-				case 'dimension':
-					if (header.type === "template") {
-						vscode.window.showWarningMessage("A template structure cannot have a dimension.");
-						break;
-					};
-
-					const inputDimension = await vscode.window.showInputBox({
-						prompt: "Enter dimension for the structure",
-						placeHolder: "e.g. 10000",
-						value: header.dimension ?? ""
-					});
-					if (inputDimension === "") {
-						vscode.window.showErrorMessage("The dimension is required.");
-						break;
-					};
-					if (inputDimension !== undefined) {
-						if (!/^\d+$/.test(inputDimension)) {
-							vscode.window.showErrorMessage("Dimension must be a positive integer.");
-							break;
-						};
-						header.dimension = inputDimension; 
-						item.label = "DIMENSION: " + inputDimension;
-					};
-					provider.refresh();
-					break;
-
-				case 'type':
-					const inputType = await vscode.window.showQuickPick(
-						["Default", "template", "*var", "*auto"],
-						{
-							placeHolder: "Select type for the structure",
-						});
-					if (inputType) {
-						header.type = inputType;
-						item.label = "TYPE: " + header.type;
-
-						// If type is "template", then dim must be removed
-						if (inputType === "template") {
-							header.dimension = undefined;	
-						};
-					};
-					provider.refresh();
-					break;
-			};
-			vscode.commands.executeCommand('setContext', 'rpgStructure.hasHeader',
-				(
-					header.name !== '' && header.type !== '' &&
-					(
-						(header.type === 'template' && (!header.dimension || header.dimension === '0')) ||
-						(header.type !== 'template' && typeof header.dimension === 'string' && header.dimension.length > 0)
-					)
-				)
-			);
-			
-		}),
-
-		// Add Field ======================================================================================
-		vscode.commands.registerCommand('rpgStructure.addField', async () => {
-			// Adds a field to the "fieldsProvider", in the last position (fields.length)
-			insertField(false, fields.length, fieldsProvider);
-		}),
-
-		// Add Substructure ===============================================================================
-		vscode.commands.registerCommand('rpgStructure.addSubstructure', async () => {
-			// Adds a field (marked as "structure") to the "fieldsProvider", always in the last position
-			insertSubstructure(fieldsProvider);
-		}),
-
-		// Clean Header ===================================================================================
-		vscode.commands.registerCommand('rpgStructure.cleanHeader', () => {
-
-			// Cleans the header structure
-			header.name = '';
-			header.type = '';
-			header.dimension = '0';
-
-			// Refresh the provider
-			provider.refresh();
-
-			// Sets "rpgStructure.hasHeader" to true or false
-			vscode.commands.executeCommand('setContext', 'rpgStructure.hasHeader',
-				(header.name !== '') && (header.dimension !== '0') && (header.type !== ''));
-
-		}),
-
-		// Clean Fields ===================================================================================
-		vscode.commands.registerCommand('rpgStructure.cleanFields', () => {
-
-			// Clean the fields
-			fields.length = 0;
-
-			// Clear the provider
-			fieldsProvider.refresh();
-
-			vscode.commands.executeCommand('setContext', 'rpgStructure.hasFields', fields.length > 0);
-
-		}),
-
-		// Create Structure ===============================================================================
-		vscode.commands.registerCommand('rpgStructure.generate', () => {
-
-			// Retrieves the editor and the insert position to generate the code
-			const editor = vscode.window.activeTextEditor;
-			const insertPosition = editor?.selection.active;
-
-			// Inserts the structure code
-			if (editor && insertPosition) {
-				handleInsert(editor, insertPosition, header.name, header.type, header.dimension, fields);
-			};
-		}),
-
-		// Adds Field to Substructure =====================================================================
-		vscode.commands.registerCommand('rpgStructure.addFieldToSubstructure', (item: FieldItem) => {
-			
-			insertFieldSubstructure(item.idNumber, fieldsProvider);
-		}),
-
-		// Delete Field ===================================================================================
-		vscode.commands.registerCommand('rpgStructure.deleteField', (item: FieldItem) => {
-			// Deletes the selected item from the "fieldsProvider"
-			deleteField(item, fieldsProvider);
-		}),
-
-		// Configuration ==================================================================================
-		vscode.commands.registerCommand('rpgStructure.configuration.itemClick', async (item: ConfigItem) => {
-			switch (item.id) {
-				case 'structureFormat':
-					const format = await vscode.window.showQuickPick(['Dcl-ds', 'DCL-DS', 'dcl-ds'], {
-						placeHolder: 'Select structure format'
-					});
-					if (format) {
-						currentConfiguration.structureFormat = format;
-						saveConfiguration(context, currentConfiguration);
-					};
-
-					break;
-
-				case 'structureIndentation':
-					const indentation = await vscode.window.showInputBox({
-						placeHolder: 'Enter number of spaces for indentation (1–10)',
-						prompt: 'Choose how many spaces to use for indentation',
-						validateInput: (value) => {
-							const num = Number(value);
-							if (!/^\d+$/.test(value)) {
-								return 'Only numbers are allowed';
-							}
-							if (num < 1 || num > 10) {
-								return 'Please enter a number between 1 and 10';
-							}
-							return null;
-						}
-					});
-					if (indentation) {
-						currentConfiguration.indentation = Number(indentation);
-						saveConfiguration(context, currentConfiguration);
-					};
-	
-					break;
-			
-			};
-			configProvider.refresh();
-		})
-	);
+/**
+ * Main function that activates the extension
+ * @param context - VS Code extension context
+ */
+export function activate(context: vscode.ExtensionContext): void {
+    try {
+        // Load configuration
+        loadConfiguration(context);
+        
+        // Initialize providers
+        const { provider, fieldsProvider, configProvider } = initializeProviders();
+        
+        // Setup editor listeners
+        setupEditorListeners();
+        
+        // Register all commands
+        registerCommands(context, provider, fieldsProvider, configProvider);
+        
+        // Initialize contexts
+        updateHeaderContext();
+        updateFieldsContext();
+        
+    } catch (error) {
+        console.error('Failed to activate RPG Structure extension:', error);
+        vscode.window.showErrorMessage('Failed to activate RPG Structure extension. Please reload VS Code.');
+    };
 };
 
-// Deactivates the extension
-export function deactivate() {
-
+/**
+ * Function called when the extension is deactivated
+ * Performs cleanup operations if necessary
+ */
+export function deactivate(): void {
 };
+
+/**
+ * Initializes tree data providers
+ * @returns Object containing all tree data providers
+ */
+function initializeProviders(): {
+    provider: HeaderTreeDataProvider;
+    fieldsProvider: FieldsTreeDataProvider;
+    configProvider: ConfigProvider;
+} {
+    const provider = new HeaderTreeDataProvider();
+    const fieldsProvider = new FieldsTreeDataProvider();
+    const configProvider = new ConfigProvider();
+    
+    // Register tree data providers
+    vscode.window.registerTreeDataProvider(TREE_DATA_PROVIDERS.HEADER, provider);
+    vscode.window.registerTreeDataProvider(TREE_DATA_PROVIDERS.FIELDS, fieldsProvider);
+    vscode.window.registerTreeDataProvider(TREE_DATA_PROVIDERS.CONFIGURATION, configProvider);
+    
+    return { provider, fieldsProvider, configProvider };
+};
+
+/**
+ * Sets up editor change listeners
+ */
+function setupEditorListeners(): void {
+    // Update context when active editor changes
+    updateContext(vscode.window.activeTextEditor);
+    
+    const disposable = vscode.window.onDidChangeActiveTextEditor((editor: vscode.TextEditor | undefined) => {
+        updateContext(editor);
+    });
+    
+    // TODO: The disposable should be added to context.subscriptions in the activate function
+};
+
+/**
+ * Registers all extension commands
+ * @param context - VS Code extension context
+ * @param provider - Header tree data provider
+ * @param fieldsProvider - Fields tree data provider
+ * @param configProvider - Configuration tree data provider
+ */
+function registerCommands(
+    context: vscode.ExtensionContext,
+    provider: HeaderTreeDataProvider,
+    fieldsProvider: FieldsTreeDataProvider,
+    configProvider: ConfigProvider
+): void {
+    const commands = [
+        // Structure data commands
+        vscode.commands.registerCommand(COMMANDS.ITEM_CLICK, async (item: StructureItem) => {
+            await handleStructureItemClick(item, provider);
+        }),
+        
+        // Field management commands
+        vscode.commands.registerCommand(COMMANDS.ADD_FIELD, async () => {
+            insertField(false, fields.length, fieldsProvider);
+            updateFieldsContext();
+        }),
+        
+        vscode.commands.registerCommand(COMMANDS.ADD_SUBSTRUCTURE, async () => {
+            insertSubstructure(fieldsProvider);
+            updateFieldsContext();
+        }),
+        
+        vscode.commands.registerCommand(COMMANDS.ADD_FIELD_TO_SUBSTRUCTURE, (item: FieldItem) => {
+            insertFieldSubstructure(item.idNumber, fieldsProvider);
+            updateFieldsContext();
+        }),
+        
+        vscode.commands.registerCommand(COMMANDS.DELETE_FIELD, (item: FieldItem) => {
+            deleteField(item, fieldsProvider);
+            updateFieldsContext();
+        }),
+        
+        // Cleanup commands
+        vscode.commands.registerCommand(COMMANDS.CLEAN_HEADER, () => {
+            cleanHeader(provider);
+        }),
+        
+        vscode.commands.registerCommand(COMMANDS.CLEAN_FIELDS, () => {
+            cleanFields(fieldsProvider);
+        }),
+        
+        // Generation command
+        vscode.commands.registerCommand(COMMANDS.GENERATE, () => {
+            generateStructure();
+        }),
+        
+        // Configuration commands
+        vscode.commands.registerCommand(COMMANDS.CONFIG_ITEM_CLICK, async (item: ConfigItem) => {
+            await handleConfigurationItemClick(item, context, configProvider);
+        })
+    ];
+    
+    context.subscriptions.push(...commands);
+};
+
+/**
+ * Handles the structure item click events (name, dimension, type)
+ * @param item - The structure item that was clicked
+ * @param provider - The header tree data provider for refreshing
+ */
+async function handleStructureItemClick(item: StructureItem, provider: HeaderTreeDataProvider): Promise<void> {
+    switch (item.id) {
+        case 'name':
+            await handleNameInput(item, provider);
+            break;
+        case 'dimension':
+            await handleDimensionInput(item, provider);
+            break;
+        case 'type':
+            await handleTypeInput(item, provider);
+            break;
+        default:
+            console.warn(`Unknown structure item id: ${item.id}`);
+    };
+    
+    updateHeaderContext();
+};
+
+/**
+ * Handles name input for the structure
+ * @param item - The structure item
+ * @param provider - The header tree data provider
+ */
+async function handleNameInput(item: StructureItem, provider: HeaderTreeDataProvider): Promise<void> {
+    const inputName = await vscode.window.showInputBox({
+        prompt: 'Enter a name for the structure',
+        placeHolder: 'e.g. structure',
+        value: header.name,
+        validateInput: (value: string) => {
+            if (!value || value.trim() === '') {
+                return 'Name is required and cannot be empty';
+            }
+            return null;
+        }
+    });
+    
+    if (inputName === undefined) {
+        return; // User cancelled
+    };
+    
+    if (inputName.trim() === '') {
+        vscode.window.showErrorMessage('The name is required.');
+        return;
+    };
+    
+    header.name = inputName.trim();
+    item.label = `NAME: ${header.name}`;
+    provider.refresh();
+};
+
+/**
+ * Handles dimension input for the structure
+ * @param item - The structure item
+ * @param provider - The header tree data provider
+ */
+async function handleDimensionInput(item: StructureItem, provider: HeaderTreeDataProvider): Promise<void> {
+    if (header.type === 'template') {
+        vscode.window.showWarningMessage('A template structure cannot have a dimension.');
+        return;
+    };
+    
+    const inputDimension = await vscode.window.showInputBox({
+        prompt: 'Enter dimension for the structure',
+        placeHolder: 'e.g. 10000',
+        value: header.dimension ?? '',
+        validateInput: (value: string) => {
+            if (!value || value.trim() === '') {
+                return 'Dimension is required';
+            };
+            if (!isPositiveInteger(value.trim())) {
+                return 'Dimension must be a positive integer';
+            };
+            return null;
+        }
+    });
+    
+    if (inputDimension === undefined) {
+        return; // User cancelled
+    };
+    
+    if (inputDimension.trim() === '') {
+        vscode.window.showErrorMessage('The dimension is required.');
+        return;
+    };
+    
+    if (!isPositiveInteger(inputDimension.trim())) {
+        vscode.window.showErrorMessage('Dimension must be a positive integer.');
+        return;
+    };
+    
+    header.dimension = inputDimension.trim();
+    item.label = `DIMENSION: ${inputDimension.trim()}`;
+    provider.refresh();
+};
+
+/**
+ * Handles type input for the structure
+ * @param item - The structure item
+ * @param provider - The header tree data provider
+ */
+async function handleTypeInput(item: StructureItem, provider: HeaderTreeDataProvider): Promise<void> {
+    const structureTypes: StructureType[] = ['Default', 'template', '*var', '*auto'];
+    
+    const inputType = await vscode.window.showQuickPick(structureTypes, {
+        placeHolder: 'Select type for the structure'
+    });
+    
+    if (!inputType) {
+        return; // User cancelled
+    };
+    
+    header.type = inputType;
+    item.label = `TYPE: ${header.type}`;
+    
+    // If type is "template", then dimension must be removed
+    if (inputType === 'template') {
+        header.dimension = undefined;
+    };
+    
+    provider.refresh();
+};
+
+/**
+ * Handles configuration item click events
+ * @param item - The configuration item that was clicked
+ * @param context - VS Code extension context
+ * @param configProvider - The configuration tree data provider
+ */
+async function handleConfigurationItemClick(
+    item: ConfigItem, 
+    context: vscode.ExtensionContext, 
+    configProvider: ConfigProvider
+): Promise<void> {
+    switch (item.id) {
+        case 'structureFormat':
+            await handleStructureFormatConfig(context);
+            break;
+        case 'structureIndentation':
+            await handleIndentationConfig(context);
+            break;
+        default:
+            console.warn(`Unknown configuration item id: ${item.id}`);
+    };
+    
+    configProvider.refresh();
+};
+
+/**
+ * Handles structure format configuration
+ * @param context - VS Code extension context
+ */
+async function handleStructureFormatConfig(context: vscode.ExtensionContext): Promise<void> {
+    const formatOptions: StructureFormat[] = ['Dcl-ds', 'DCL-DS', 'dcl-ds'];
+    
+    const format = await vscode.window.showQuickPick(formatOptions, {
+        placeHolder: 'Select structure format'
+    });
+    
+    if (format) {
+        currentConfiguration.structureFormat = format;
+        saveConfiguration(context, currentConfiguration);
+    };
+};
+
+/**
+ * Handles indentation configuration
+ * @param context - VS Code extension context
+ */
+async function handleIndentationConfig(context: vscode.ExtensionContext): Promise<void> {
+    const indentation = await vscode.window.showInputBox({
+        placeHolder: 'Enter number of spaces for indentation (1–10)',
+        prompt: 'Choose how many spaces to use for indentation',
+        validateInput: (value: string) => {
+            if (!/^\d+$/.test(value)) {
+                return 'Only numbers are allowed';
+            };
+            const num = Number(value);
+            if (num < 1 || num > 10) {
+                return 'Please enter a number between 1 and 10';
+            };
+            return null;
+        }
+    });
+    
+    if (indentation) {
+        currentConfiguration.indentation = Number(indentation);
+        saveConfiguration(context, currentConfiguration);
+    };
+};
+
+/**
+ * Cleans the header structure and refreshes the UI
+ * @param provider - The header tree data provider
+ */
+function cleanHeader(provider: HeaderTreeDataProvider): void {
+    header.name = '';
+    header.type = '';
+    header.dimension = '0';
+    
+    provider.refresh();
+    updateHeaderContext();
+};
+
+/**
+ * Cleans all fields and refreshes the UI
+ * @param fieldsProvider - The fields tree data provider
+ */
+function cleanFields(fieldsProvider: FieldsTreeDataProvider): void {
+    fields.length = 0;
+    fieldsProvider.refresh();
+    updateFieldsContext();
+};
+
+/**
+ * Generates the RPG structure code at the current cursor position
+ */
+function generateStructure(): void {
+    const editor = vscode.window.activeTextEditor;
+    
+    if (!editor) {
+        vscode.window.showErrorMessage('No active editor found. Please open a file first.');
+        return;
+    };
+    
+    const insertPosition = editor.selection.active;
+    
+    try {
+        handleInsert(editor, insertPosition, header.name, header.type, header.dimension, fields);
+    } catch (error) {
+        console.error('Error generating structure:', error);
+        vscode.window.showErrorMessage('Failed to generate RPG structure. Please try again.');
+    };
+};
+
+

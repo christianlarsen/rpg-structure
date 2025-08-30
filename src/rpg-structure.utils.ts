@@ -6,8 +6,9 @@
 
 import * as vscode from 'vscode';
 import { generateRpgCode } from './rpg-structure.code';
-import { fields, Field } from './rpg-structure.model';
+import { fields, header, Field } from './rpg-structure.model';
 import { FieldItem, FieldsTreeDataProvider } from './rpg-structure.providers';
+import { RpgStructureParser } from './rpg-structure.parser';
 
 // Types
 type FieldType = 
@@ -630,3 +631,64 @@ export function findFieldById(fieldList: Field[] = fields, id: number): Field | 
     return null;
 };
 
+export async function importStructureAtCursor(): Promise<boolean> {
+    const editor = vscode.window.activeTextEditor;
+    if (!editor) {
+        vscode.window.showErrorMessage('No active editor found');
+        return false;
+    }
+
+    const document = editor.document;
+    const position = editor.selection.active;
+    const content = document.getText();
+    
+    const parsed = RpgStructureParser.parseStructureAtCursor(content, position.line);
+    
+    if (!parsed.success) {
+        vscode.window.showErrorMessage(`Import failed: ${parsed.errors.join(', ')}`);
+        return false;
+    }
+    
+    if (!RpgStructureParser.validateParsedStructure(parsed)) {
+        vscode.window.showErrorMessage('Invalid structure format found');
+        return false;
+    }
+    
+    // Clear existing data and import
+    fields.length = 0;
+    Object.assign(header, parsed.header);
+    fields.push(...parsed.fields);
+    
+    vscode.window.showInformationMessage(`Structure "${parsed.header.name}" imported successfully`);
+    return true;
+}
+
+export async function showStructureList(): Promise<void> {
+    const editor = vscode.window.activeTextEditor;
+    if (!editor) return;
+    
+    const structures = RpgStructureParser.extractAllStructures(editor.document.getText());
+    
+    if (structures.length === 0) {
+        vscode.window.showInformationMessage('No RPG structures found in current file');
+        return;
+    }
+    
+    const items = structures.map(s => ({
+        label: s.header.name,
+        description: `${s.header.type} (${s.fields.length} fields)`,
+        structure: s
+    }));
+    
+    const selected = await vscode.window.showQuickPick(items, {
+        placeHolder: 'Select structure to import'
+    });
+    
+    if (selected) {
+        // Import selected structure
+        fields.length = 0;
+        Object.assign(header, selected.structure.header);
+        fields.push(...selected.structure.fields);
+        vscode.window.showInformationMessage(`Structure "${selected.structure.header.name}" imported`);
+    }
+}

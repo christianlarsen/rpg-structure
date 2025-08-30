@@ -116,7 +116,11 @@ export const COMMANDS = {
     /** Command to delete a field from the structure */
     DELETE_FIELD: 'rpgStructure.deleteField',
     /** Command fired when a configuration item is clicked */
-    CONFIG_ITEM_CLICK: 'rpgStructure.configuration.itemClick'
+    CONFIG_ITEM_CLICK: 'rpgStructure.configuration.itemClick',
+    /** Command import structure from cursor */
+    IMPORT_FROM_CURSOR: 'rpgStructure.importFromCursor',
+    /** Command import structure from list */
+    IMPORT_FROM_LIST: 'rpgStructure.importFromList'
 } as const;
 
 /**

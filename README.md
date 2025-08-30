@@ -21,6 +21,7 @@ With RPG Structure, you can quickly design structures, templates, and substructu
 - Export your structure to the active editor at any position.
 - Configure preferred format for declarations (`Dcl-ds`, `dcl-ds`, `DCL-DS`).
 - Support for **templates** and **dimensional types**.
+- Possibility of structure importation from code.
 
 ---
 
@@ -65,8 +66,8 @@ With RPG Structure, you can quickly design structures, templates, and substructu
 
 ## Release Notes
 
-### [1.0.0] - 2025-08-24
-- First stable release with templates, dimensional types, substructures, and configuration options.
+### [1.1.0] - 2025-08-30
+- Possibility of structure importation from code.
 
 See the [Changelog](./CHANGELOG.md) for the complete history.
 

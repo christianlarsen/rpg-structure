@@ -10,6 +10,7 @@ import { HeaderTreeDataProvider, StructureItem, FieldsTreeDataProvider, FieldIte
 import { loadConfiguration, saveConfiguration, currentConfiguration } from './rpg-structure.configuration';
 import { header, fields, COMMANDS, TREE_DATA_PROVIDERS, StructureFormat, StructureType } from './rpg-structure.model';
 import { isPositiveInteger, updateHeaderContext, updateFieldsContext } from './rpg-structure.helper';
+import { RpgStructureParser, ParsedStructure } from './rpg-structure.parser';
 
 /**
  * Main function that activates the extension
@@ -138,6 +139,15 @@ function registerCommands(
         // Configuration commands
         vscode.commands.registerCommand(COMMANDS.CONFIG_ITEM_CLICK, async (item: ConfigItem) => {
             await handleConfigurationItemClick(item, context, configProvider);
+        }),
+
+        // Import commands
+        vscode.commands.registerCommand(COMMANDS.IMPORT_FROM_CURSOR, async () => {
+            await importStructureAtCursor(provider, fieldsProvider);
+        }),
+        
+        vscode.commands.registerCommand(COMMANDS.IMPORT_FROM_LIST, async () => {
+            await importFromStructureList(provider, fieldsProvider);
         })
     ];
     
@@ -382,5 +392,145 @@ function generateStructure(): void {
         vscode.window.showErrorMessage('Failed to generate RPG structure. Please try again.');
     };
 };
+
+/**
+ * Imports RPG structure at cursor position
+ * @param provider - Header tree data provider
+ * @param fieldsProvider - Fields tree data provider
+ */
+async function importStructureAtCursor(
+    provider: HeaderTreeDataProvider, 
+    fieldsProvider: FieldsTreeDataProvider
+): Promise<void> {
+    const editor = vscode.window.activeTextEditor;
+    if (!editor) {
+        vscode.window.showErrorMessage('No active editor found');
+        return;
+    }
+
+    const document = editor.document;
+    const position = editor.selection.active;
+    const content = document.getText();
+    
+    try {
+        const parsed = RpgStructureParser.parseStructureAtCursor(content, position.line);
+        
+        if (!parsed.success) {
+            vscode.window.showErrorMessage(`Import failed: ${parsed.errors.join(', ')}`);
+            return;
+        }
+        
+        if (!RpgStructureParser.validateParsedStructure(parsed)) {
+            vscode.window.showErrorMessage('Invalid structure format found');
+            return;
+        }
+        
+        // Confirm before overwriting existing data
+        if (header.name || fields.length > 0) {
+            const overwrite = await vscode.window.showWarningMessage(
+                'This will overwrite your current structure. Continue?',
+                { modal: true },
+                'Yes', 'No'
+            );
+            
+            if (overwrite !== 'Yes') {
+                return;
+            }
+        }
+        
+        // Clear existing data and import
+        cleanHeader(provider);
+        cleanFields(fieldsProvider);
+        
+        Object.assign(header, parsed.header);
+        fields.push(...parsed.fields);
+        
+        // Refresh UI
+        provider.refresh();
+        fieldsProvider.refresh();
+        updateHeaderContext();
+        updateFieldsContext();
+        
+        vscode.window.showInformationMessage(`Structure "${parsed.header.name}" imported successfully`);
+        
+    } catch (error) {
+        console.error('Error importing structure:', error);
+        vscode.window.showErrorMessage(`Import failed: ${error instanceof Error ? error.message : String(error)}`);
+    }
+}
+
+/**
+ * Shows list of all structures in file for import selection
+ * @param provider - Header tree data provider  
+ * @param fieldsProvider - Fields tree data provider
+ */
+async function importFromStructureList(
+    provider: HeaderTreeDataProvider,
+    fieldsProvider: FieldsTreeDataProvider
+): Promise<void> {
+    const editor = vscode.window.activeTextEditor;
+    if (!editor) {
+        vscode.window.showErrorMessage('No active editor found');
+        return;
+    }
+    
+    try {
+        const structures = RpgStructureParser.extractAllStructures(editor.document.getText());
+        
+        if (structures.length === 0) {
+            vscode.window.showInformationMessage('No RPG structures found in current file');
+            return;
+        }
+        
+        const items = structures.map(s => ({
+            label: s.header.name,
+            description: `${s.header.type} (${s.fields.length} fields)`,
+            detail: s.header.dimension && s.header.dimension !== '0' ? `Dimension: ${s.header.dimension}` : undefined,
+            structure: s
+        }));
+        
+        const selected = await vscode.window.showQuickPick(items, {
+            placeHolder: 'Select structure to import',
+            matchOnDescription: true,
+            matchOnDetail: true
+        });
+        
+        if (!selected) {
+            return; // User cancelled
+        }
+        
+        // Confirm before overwriting existing data
+        if (header.name || fields.length > 0) {
+            const overwrite = await vscode.window.showWarningMessage(
+                `Import "${selected.structure.header.name}"? This will overwrite your current structure.`,
+                { modal: true },
+                'Import', 'Cancel'
+            );
+            
+            if (overwrite !== 'Import') {
+                return;
+            }
+        }
+        
+        // Clear existing and import selected structure
+        cleanHeader(provider);
+        cleanFields(fieldsProvider);
+        
+        Object.assign(header, selected.structure.header);
+        fields.push(...selected.structure.fields);
+        
+        // Refresh UI
+        provider.refresh();
+        fieldsProvider.refresh();
+        updateHeaderContext();
+        updateFieldsContext();
+        
+        vscode.window.showInformationMessage(`Structure "${selected.structure.header.name}" imported successfully`);
+        
+    } catch (error) {
+        console.error('Error importing from structure list:', error);
+        vscode.window.showErrorMessage(`Import failed: ${error instanceof Error ? error.message : String(error)}`);
+    }
+}
 
 

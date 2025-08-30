@@ -8,7 +8,7 @@
     "url": "https://www.linkedin.com/in/christianlarsenvalverde/"
   },
   "publisher": "ChristianLarsen",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/christianlarsen/rpg-structure.git"
@@ -31,12 +31,12 @@
   "main": "./out/extension.js",
   "contributes": {
     "languages": [
-    {
-      "id": "rpgle",
-      "aliases": ["RPGLE", "SQLRPGLE"],
-      "extensions": [".rpgle", ".sqlrpgle"],
-      "configuration": "./language-configuration.json"
-    }
+      {
+        "id": "rpgle",
+        "aliases": ["RPGLE", "SQLRPGLE"],
+        "extensions": [".rpgle", ".sqlrpgle"],
+        "configuration": "./language-configuration.json"
+      }
     ],
     "viewsContainers": {
       "activitybar": [
@@ -51,9 +51,9 @@
     "views": {
       "rpg-structure": [
         {
-          "id" : "rpg-structure-configuration",
-          "name" : "Configuration",
-          "when" : "true"
+          "id": "rpg-structure-configuration",
+          "name": "Configuration",
+          "when": "true"
         },
         {
           "id": "rpg-structure-header",
@@ -71,6 +71,11 @@
       "view/title": [
         {
           "command": "rpgStructure.cleanHeader",
+          "when": "view == rpg-structure-header",
+          "group": "navigation"
+        },
+        {
+          "command": "rpgStructure.importFromCursor",
           "when": "view == rpg-structure-header",
           "group": "navigation"
         },
@@ -107,9 +112,9 @@
           "group": "inline"
         },
         {
-          "command" : "rpgStructure.configuration",
-          "when" : "view == rpgStructureConfig && viewItem == configItem",
-          "group" : "inline"
+          "command": "rpgStructure.configuration",
+          "when": "view == rpgStructureConfig && viewItem == configItem",
+          "group": "inline"
         }
       ]
     },
@@ -118,13 +123,19 @@
         "command": "rpgStructure.cleanHeader",
         "title": "Clean Header",
         "category": "RPG Structure",
-        "icon": "$(debug-restart)"
+        "icon": "$(clear-all)"
+      },
+      {
+        "command": "rpgStructure.importFromCursor",
+        "title": "Import Structure at Cursor",
+        "category": "RPG Structure",
+        "icon": "$(arrow-down)"
       },
       {
         "command": "rpgStructure.cleanFields",
         "title": "Clean Fields",
         "category": "RPG Structure",
-        "icon": "$(debug-restart)"
+        "icon": "$(clear-all)"
       },
       {
         "command": "rpgStructure.addField",
@@ -142,7 +153,7 @@
         "command": "rpgStructure.generate",
         "title": "Generate Structure",
         "category": "RPG Structure",
-        "icon": "$(code-oss)"
+        "icon": "$(symbol-structure)"
       },
       {
         "command": "rpgStructure.addFieldToSubstructure",
@@ -153,14 +164,21 @@
       {
         "command": "rpgStructure.deleteField",
         "title": "Delete Field",
-        "icon": "$(close)"
+        "icon": "$(trash)",
+        "category": "RPG Structure"
       },
       {
         "command": "rpgStructure.configuration",
         "title": "Configuration",
-        "icon": "$(close)"
+        "icon": "$(gear)",
+        "category": "RPG Structure"
+      },
+      {
+        "command": "rpgStructure.showStructureList",
+        "title": "Show All Structures in File",
+        "category": "RPG Structure",
+        "icon": "$(list-tree)"
       }
-
     ]
   },
   "scripts": {

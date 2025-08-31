@@ -230,11 +230,11 @@ export class FieldsTreeDataProvider implements vscode.TreeDataProvider<vscode.Tr
 export class FieldItem extends vscode.TreeItem {
     constructor(
         public readonly idNumber: number,
-        public readonly name: string,
-        public readonly type: string,
-        public readonly length: string | undefined,
-        public readonly init: string | undefined,
-        public readonly dim: number | undefined,
+        public name: string,
+        public type: string,
+        public length: string | undefined,
+        public init: string | undefined,
+        public dim: number | undefined,
         public readonly isStructure: boolean,
         public readonly fields: Field[]
     ) {
@@ -244,25 +244,69 @@ export class FieldItem extends vscode.TreeItem {
 
         super(name, collapsibleState);
 
-        if (isStructure) {
+        this.updateDisplayProperties();
+
+    };
+    
+    /**
+     * Updates the display properties (contextValue, iconPath, tooltip, description)
+     * Call this method after modifying any field properties
+     */
+    private updateDisplayProperties(): void {
+        if (this.isStructure) {
             this.contextValue = 'rpg-structure-structureItem';
             this.iconPath = new vscode.ThemeIcon('symbol-structure');
-            this.tooltip = `Substructure: ${name}`;
-            this.description = length ? `dim(${length})` : '';
+            this.tooltip = `Substructure: ${this.name}`;
+            this.description = this.length ? `dim(${this.length})` : '';
         } else {
             this.contextValue = 'rpg-structure-fieldItem';
             this.iconPath = new vscode.ThemeIcon('symbol-field');
-            this.tooltip = `Field: ${name}`;
+            this.tooltip = `Field: ${this.name}`;
             
             // Build description with type, length, dimension, and initialization
-            let description = type;
-            if (length) description += `(${length})`;
-            if (dim) description += ` dim(${dim})`;
-            if (init) description += ` inz(${init})`;
+            let description = this.type;
+            if (this.length) description += `(${this.length})`;
+            if (this.dim) description += ` dim(${this.dim})`;
+            if (this.init) description += ` inz(${this.init})`;
             
             this.description = description;
         };
     };
+
+    /**
+     * Updates the dimension and refreshes display properties
+     * @param newDim New dimension value
+     */
+    public updateDimension(newDim: number | undefined): void {
+        this.dim = newDim;
+        this.updateDisplayProperties();
+    };
+
+    /**
+     * Updates field properties and refreshes display
+     * @param updates Object containing the properties to update
+     */
+    public updateProperties(updates: {
+        name?: string;
+        type?: string;
+        length?: string | undefined;
+        init?: string | undefined;
+        dim?: number | undefined;
+    }): void {
+        if (updates.name !== undefined) this.name = updates.name;
+        if (updates.type !== undefined) this.type = updates.type;
+        if (updates.length !== undefined) this.length = updates.length;
+        if (updates.init !== undefined) this.init = updates.init;
+        if (updates.dim !== undefined) this.dim = updates.dim;
+        
+        // Update the label if name changed
+        if (updates.name !== undefined) {
+            this.label = updates.name;
+        }
+        
+        this.updateDisplayProperties();
+    };
+
 };
 
 /**

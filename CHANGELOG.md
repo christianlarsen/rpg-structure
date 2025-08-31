@@ -3,9 +3,14 @@
 All notable changes to this project will be documented in this file.  
 This project follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.2.0] - 2025-08-31
+### Added
+- Ability to add a dimension to a field.
+- Ability to import a structure from the list of structures available in the code.
+
 ## [1.1.0] - 2025-08-30
 ### Added
-- Possibility of structure importation from code.
+- Ability to import a structure from code (cursor position).
 
 ## [1.0.0] - 2025-08-24
 ### Added

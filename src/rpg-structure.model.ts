@@ -120,7 +120,9 @@ export const COMMANDS = {
     /** Command import structure from cursor */
     IMPORT_FROM_CURSOR: 'rpgStructure.importFromCursor',
     /** Command import structure from list */
-    IMPORT_FROM_LIST: 'rpgStructure.importFromList'
+    IMPORT_FROM_LIST: 'rpgStructure.showStructureList',
+    /** Command add dimension to a field */
+    ADD_DIMENSION: 'rpgStructure.addDimension'
 } as const;
 
 /**

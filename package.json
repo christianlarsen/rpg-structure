@@ -8,7 +8,7 @@
     "url": "https://www.linkedin.com/in/christianlarsenvalverde/"
   },
   "publisher": "ChristianLarsen",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/christianlarsen/rpg-structure.git"
@@ -80,6 +80,11 @@
           "group": "navigation"
         },
         {
+          "command": "rpgStructure.showStructureList",
+          "when": "view == rpg-structure-header",
+          "group": "navigation"
+        },
+        {
           "command": "rpgStructure.cleanFields",
           "when": "view == rpg-structure-fields && rpgStructure.hasFields",
           "group": "navigation"
@@ -112,6 +117,11 @@
           "group": "inline"
         },
         {
+          "command": "rpgStructure.addDimension",
+          "when": "view == rpg-structure-fields && viewItem == rpg-structure-fieldItem",
+          "group": "inline"
+        },
+        {
           "command": "rpgStructure.configuration",
           "when": "view == rpgStructureConfig && viewItem == configItem",
           "group": "inline"
@@ -130,6 +140,12 @@
         "title": "Import Structure at Cursor",
         "category": "RPG Structure",
         "icon": "$(arrow-down)"
+      },
+      {
+        "command": "rpgStructure.showStructureList",
+        "title": "Import from List of Structures",
+        "category": "RPG Structure",
+        "icon": "$(list-tree)"
       },
       {
         "command": "rpgStructure.cleanFields",
@@ -178,6 +194,12 @@
         "title": "Show All Structures in File",
         "category": "RPG Structure",
         "icon": "$(list-tree)"
+      },
+      {
+        "command": "rpgStructure.addDimension",
+        "title": "Add Dimension",
+        "icon": "$(add)",
+        "category": "RPG Structure"
       }
     ]
   },

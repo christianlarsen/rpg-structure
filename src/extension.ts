@@ -5,10 +5,10 @@
 */
 
 import * as vscode from 'vscode';
-import { handleInsert, updateContext, deleteField, insertField, insertSubstructure, insertFieldSubstructure } from './rpg-structure.utils';
+import { handleInsert, updateContext, deleteField, insertField, insertSubstructure, insertFieldSubstructure, addDimensionToField } from './rpg-structure.utils';
 import { HeaderTreeDataProvider, StructureItem, FieldsTreeDataProvider, FieldItem, ConfigProvider, ConfigItem } from './rpg-structure.providers';
 import { loadConfiguration, saveConfiguration, currentConfiguration } from './rpg-structure.configuration';
-import { header, fields, COMMANDS, TREE_DATA_PROVIDERS, StructureFormat, StructureType } from './rpg-structure.model';
+import { header, fields, COMMANDS, TREE_DATA_PROVIDERS, StructureFormat, StructureType, Field } from './rpg-structure.model';
 import { isPositiveInteger, updateHeaderContext, updateFieldsContext } from './rpg-structure.helper';
 import { RpgStructureParser, ParsedStructure } from './rpg-structure.parser';
 
@@ -148,6 +148,10 @@ function registerCommands(
         
         vscode.commands.registerCommand(COMMANDS.IMPORT_FROM_LIST, async () => {
             await importFromStructureList(provider, fieldsProvider);
+        }),
+
+        vscode.commands.registerCommand(COMMANDS.ADD_DIMENSION, async(item: Field) => {
+            await addDimensionToField(item.idNumber , fieldsProvider);
         })
     ];
     

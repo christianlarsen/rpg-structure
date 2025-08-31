@@ -350,15 +350,7 @@ export async function insertField(
             }
         });
 
-        if (!name) return; // User cancelled
-
-        // Check for duplicate names
-        // TODO: If a field exists in other substructure, is correct...
-        // Now this is not working fine.  
-//        if (fieldNameExists(name)) {
-//            vscode.window.showErrorMessage(`A field named "${name}" already exists.`);
-//            return;
-//        };
+        if (!name) return; 
 
         // Get field type
         const typeSelected = await vscode.window.showQuickPick(FIELD_TYPES, {
@@ -366,7 +358,7 @@ export async function insertField(
         });
         if (!typeSelected) return; // User cancelled
 
-		const type = typeSelected as FieldType;
+        const type = typeSelected as FieldType;
 
         // Get field length (if required)
         let length: string | undefined;
@@ -384,28 +376,10 @@ export async function insertField(
 
             if (lengthInput !== undefined) {
                 length = lengthInput.trim();
-            };
-        };
-
-        // Get dimension (optional)
-        let dim: number | undefined;
-        const dimInput = await vscode.window.showInputBox({
-            prompt: 'Dimension length (optional)',
-            placeHolder: 'e.g. 100',
-            validateInput: (input) => {
-                const validation = validateDimension(input);
-                return validation.isValid ? undefined : validation.errorMessage;
             }
-        });
+        }
 
-        if (dimInput && dimInput.trim() !== '') {
-            const parsed = parseInt(dimInput.trim(), 10);
-            if (!isNaN(parsed) && parsed > 0) {
-                dim = parsed;
-            };
-        };
-
-        // Get initialization value (optional)
+        // Get initialization value (optional) - NO DIMENSION PROMPT HERE
         const init = await vscode.window.showInputBox({
             prompt: 'Init value (optional)',
             placeHolder: getInitPlaceholder(type),
@@ -415,9 +389,9 @@ export async function insertField(
             }
         });
 
-        // Create and add the field
+        // Create and add the field WITHOUT dimension
         const newId = getNextIdNumber(fields);
-        const newField = new FieldItem(newId, name, type, length, init?.trim(), dim, false, []);
+        const newField = new FieldItem(newId, name, type, length, init?.trim(), undefined, false, []); // dim = undefined
 
         if (!isSubstructure) {
             provider.addFieldBefore(newField, position);
@@ -426,6 +400,16 @@ export async function insertField(
         };
 
         updateFieldsContext();
+
+        // Optional: Ask if user wants to add dimension immediately
+        const addDimensionNow = await vscode.window.showInformationMessage(
+            `Field "${name}" created successfully. Do you want to add a dimension now?`,
+            'Yes', 'No'
+        );
+
+        if (addDimensionNow === 'Yes') {
+            await addDimensionToField(newField.idNumber, provider);
+        };
 
     } catch (error) {
         console.error('Error inserting field:', error);
@@ -647,12 +631,12 @@ export async function importStructureAtCursor(): Promise<boolean> {
     if (!parsed.success) {
         vscode.window.showErrorMessage(`Import failed: ${parsed.errors.join(', ')}`);
         return false;
-    }
+    };
     
     if (!RpgStructureParser.validateParsedStructure(parsed)) {
         vscode.window.showErrorMessage('Invalid structure format found');
         return false;
-    }
+    };
     
     // Clear existing data and import
     fields.length = 0;
@@ -661,7 +645,7 @@ export async function importStructureAtCursor(): Promise<boolean> {
     
     vscode.window.showInformationMessage(`Structure "${parsed.header.name}" imported successfully`);
     return true;
-}
+};
 
 export async function showStructureList(): Promise<void> {
     const editor = vscode.window.activeTextEditor;
@@ -672,7 +656,7 @@ export async function showStructureList(): Promise<void> {
     if (structures.length === 0) {
         vscode.window.showInformationMessage('No RPG structures found in current file');
         return;
-    }
+    };
     
     const items = structures.map(s => ({
         label: s.header.name,
@@ -690,5 +674,63 @@ export async function showStructureList(): Promise<void> {
         Object.assign(header, selected.structure.header);
         fields.push(...selected.structure.fields);
         vscode.window.showInformationMessage(`Structure "${selected.structure.header.name}" imported`);
-    }
-}
+    };
+};
+
+/**
+ * Adds or modifies dimension for an existing field
+ * @param fieldId - ID of the field to update
+ * @param provider - Fields tree data provider 
+*/
+export async function addDimensionToField(fieldId: number, provider: FieldsTreeDataProvider): Promise<void> {
+    const field = findFieldById(fields, fieldId);
+    if (!field) {
+        vscode.window.showErrorMessage('Field not found.');
+        return;
+    };
+
+    try {
+        const currentDimension = field.dim ? field.dim.toString() : '';
+        const prompt = currentDimension ? 
+            `Modify dimension (current: ${currentDimension})` : 
+            'Add dimension to field';
+
+        const dimInput = await vscode.window.showInputBox({
+            prompt: prompt,
+            placeHolder: currentDimension || 'e.g. 100',
+            value: currentDimension,
+            validateInput: (input) => {
+                const validation = validateDimension(input);
+                return validation.isValid ? undefined : validation.errorMessage;
+            }
+        });
+
+        if (dimInput === undefined) return;
+
+        if (dimInput.trim() === '') {
+            field.dim = undefined;
+            provider.refresh();
+            vscode.window.showInformationMessage(`Dimension removed from field "${field.name}".`);
+            return;
+        };
+
+        const newDimension = parseInt(dimInput.trim(), 10);
+        if (!isNaN(newDimension) && newDimension > 0) {
+            const oldDimension = field.dim;
+            field.dim = newDimension;
+            provider.refresh();
+            
+            const message = oldDimension ? 
+                `Dimension for field "${field.name}" changed from ${oldDimension} to ${newDimension}.` :
+                `Dimension ${newDimension} added to field "${field.name}".`;
+            
+            vscode.window.showInformationMessage(message);
+        } else {
+            vscode.window.showErrorMessage('Invalid dimension value. Please enter a positive integer.');
+        };
+
+    } catch (error) {
+        console.error('Error adding dimension to field:', error);
+        vscode.window.showErrorMessage(`Failed to modify dimension: ${error instanceof Error ? error.message : String(error)}`);
+    };
+};

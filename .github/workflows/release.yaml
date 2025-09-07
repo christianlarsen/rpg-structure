@@ -29,6 +29,9 @@ jobs:
           npm install
           npm install -g vsce
 
+      - name: Prepare for Publishing
+        run: npm run vscode:prepublish
+
       - name: Build Extension
         run: vsce package
 

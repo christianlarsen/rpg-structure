@@ -1,7 +1,15 @@
 # Changelog
+All notable changes to this project will be documented in this file.
 
-All notable changes to this project will be documented in this file.  
-This project follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
+
+## [Unreleased]
+- More RPG Structure features and improvements planned.
+- Bug fixes and stability enhancements.
+
+## [1.2.1] - 2025-09-07
+### Added
+- Internal repository changes.
 
 ## [1.2.0] - 2025-08-31
 ### Added
@@ -23,13 +31,12 @@ This project follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - New extension icon.
 
 ### Fixed
-- Various bug fixes, including issues with NaN dimension generation and SQLRPGLE syntax highlighting.
-
----
+- NaN dimension generation.
+- SQLRPGLE syntax highlighting issues.
 
 ## [0.0.11] - 2025-08-20
 ### Fixed
-- Error fixes (NaN dimension generation).
+- NaN dimension generation error.
 
 ## [0.0.10] - 2025-08-15
 ### Added
@@ -42,7 +49,7 @@ This project follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [0.0.8] - 2025-08-05
 ### Fixed
-- Fixed problem with code highlighting in SQLRPGLE sources.
+- Code highlighting in SQLRPGLE sources.
 
 ## [0.0.7] - 2025-08-01
 ### Added
@@ -51,9 +58,13 @@ This project follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Ability to create substructures (with or without length).
 - Ability to add fields inside substructures.
 
-## [0.0.5] & [0.0.6] - 2025-07-28
+## [0.0.6] - 2025-07-28
 ### Fixed
-- Minor changes and bug corrections.
+- Minor bug corrections.
+
+## [0.0.5] - 2025-07-28
+### Fixed
+- Minor changes and fixes.
 
 ## [0.0.4] - 2025-07-25
 ### Changed

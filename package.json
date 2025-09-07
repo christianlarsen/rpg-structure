@@ -28,13 +28,35 @@
   "categories": [
     "Programming Languages"
   ],
+  "activationEvents": [
+    "onView:rpg-structure-configuration",
+    "onView:rpg-structure-header",
+    "onView:rpg-structure-fields",
+    "onCommand:rpgStructure.cleanHeader",
+    "onCommand:rpgStructure.importFromCursor",
+    "onCommand:rpgStructure.showStructureList",
+    "onCommand:rpgStructure.cleanFields",
+    "onCommand:rpgStructure.addField",
+    "onCommand:rpgStructure.addSubstructure",
+    "onCommand:rpgStructure.generate",
+    "onCommand:rpgStructure.addFieldToSubstructure",
+    "onCommand:rpgStructure.deleteField",
+    "onCommand:rpgStructure.addDimension",
+    "onCommand:rpgStructure.configuration"
+  ],
   "main": "./out/extension.js",
   "contributes": {
     "languages": [
       {
         "id": "rpgle",
-        "aliases": ["RPGLE", "SQLRPGLE"],
-        "extensions": [".rpgle", ".sqlrpgle"],
+        "aliases": [
+          "RPGLE",
+          "SQLRPGLE"
+        ],
+        "extensions": [
+          ".rpgle",
+          ".sqlrpgle"
+        ],
         "configuration": "./language-configuration.json"
       }
     ],

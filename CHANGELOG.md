@@ -7,6 +7,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - More RPG Structure features and improvements planned.
 - Bug fixes and stability enhancements.
 
+## [1.2.3] - 2026-07-18
+### Fixes
+- The button that generates the structures were not working correctly.
+### Added
+- New "unnamed" data structures implementation.
+- Posibility of assigning a position (pos / samepos) to a field.
+
 ## [1.2.2] - 2025-09-07
 ### Fixes
 - Internal repository changes.

@@ -8,7 +8,7 @@
     "url": "https://www.linkedin.com/in/christianlarsenvalverde/"
   },
   "publisher": "ChristianLarsen",
-  "version": "1.2.2",
+  "version": "1.2.3",
   "repository": {
     "type": "git",
     "url": "https://github.com/christianlarsen/rpg-structure.git"
@@ -120,12 +120,17 @@
         },
         {
           "command": "rpgStructure.deleteField",
-          "when": "view == rpg-structure-fields && (viewItem == rpg-structure-fieldItem || viewItem == rpg-structure-structureItem)",
+          "when": "view == rpg-structure-fields && (viewItem == rpg-structure-fieldItem || viewItem == rpg-structure-fieldItem-dim || viewItem == rpg-structure-fieldItem-pos || viewItem == rpg-structure-structureItem)",
           "group": "inline"
         },
         {
           "command": "rpgStructure.addDimension",
-          "when": "view == rpg-structure-fields && viewItem == rpg-structure-fieldItem",
+          "when": "view == rpg-structure-fields && (viewItem == rpg-structure-fieldItem || viewItem == rpg-structure-fieldItem-dim)",
+          "group": "inline"
+        },
+        {
+          "command": "rpgStructure.addPosition",
+          "when": "view == rpg-structure-fields && (viewItem == rpg-structure-fieldItem || viewItem == rpg-structure-fieldItem-pos)",
           "group": "inline"
         },
         {
@@ -206,6 +211,12 @@
         "command": "rpgStructure.addDimension",
         "title": "Add Dimension",
         "icon": "$(add)",
+        "category": "RPG Structure"
+      },
+      {
+        "command": "rpgStructure.addPosition",
+        "title": "Add Position",
+        "icon": "$(target)",
         "category": "RPG Structure"
       }
     ]

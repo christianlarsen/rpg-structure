@@ -69,8 +69,10 @@ With RPG Structure, you can quickly design structures, templates, and substructu
 See the full changelog [here](./CHANGELOG.md).
 
 ### Latest
-**1.2.2** - 2025-09-07  
-- Fixes: Internal changes on repository.  
+**1.2.3** - 2026-07-18 
+- Fixes: The button that generates the structures were not working correctly.
+- Added: New "unnamed" data structures implementation.
+- Added: Posibility of assigning a position (pos / samepos) to a field.
 
 ---
 

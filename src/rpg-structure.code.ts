@@ -5,7 +5,7 @@
 */
 
 import { currentConfiguration } from './rpg-structure.configuration';
-import { Field, FORMAT_MAP, StructureFormat } from './rpg-structure.model';
+import { Field, FORMAT_MAP, StructureFormat, isAnonymousName } from './rpg-structure.model';
 
 // Types
 type StructureType = 'Default' | 'template' | '*var' | '*auto';
@@ -117,27 +117,31 @@ function generateStructureHeader(
 ): string {
 
     const format = FORMAT_MAP[currentConfiguration.structureFormat as StructureFormat];
-    
+
     if (!format) {
         throw new Error(`Unknown structure format: ${currentConfiguration.structureFormat}`);
     };
-    
+
+    const anonymous = isAnonymousName(name);
+
     // Start building the header
-    let header = `${headIndent}${format.dclds} ${name.trim()}`;
-    
-    // Add qualified keyword for top-level structures
-    if (level === 0) {
+    let header = `${headIndent}${format.dclds} ${anonymous ? format.anonymousx : name.trim()}`;
+
+    // Add qualified keyword for top-level structures (anonymous structures are never qualified)
+    if (level === 0 && !anonymous) {
         header += ` ${format.qualified}`;
     };
-    
-    // Add dimension information if provided
-    header += generateDimensionClause(type, dimension, format);
-    
+
+    // Add dimension information if provided (anonymous structures cannot have a dimension)
+    if (!anonymous) {
+        header += generateDimensionClause(type, dimension, format);
+    };
+
     // Add template keyword for template structures at top level
-    if (type === 'template' && line === 0 && level === 0) {
+    if (type === 'template' && line === 0 && level === 0 && !anonymous) {
         header += ` ${format.template}`;
     };
-    
+
     return header + ';';
 };
 
@@ -149,12 +153,14 @@ function generateStructureHeader(
  * @returns Dimension clause string (may be empty)
  */
 function generateDimensionClause(type: StructureType, dimension: string | undefined, format: any): string {
-    if (!dimension || !dimension.toString().trim() || !type.trim()) {
+    const dimensionValue = dimension?.toString().trim();
+
+    // '0' is used internally as a "no dimension set" sentinel (e.g. Default structures
+    // without an explicit dimension), so it must not generate dim(0).
+    if (!dimensionValue || dimensionValue === '0' || !type.trim()) {
         return '';
     };
-    
-    const dimensionValue = dimension.toString().trim();
-    
+
     switch (type) {
         case 'Default':
             return ` ${format.dimx}(${dimensionValue})`;
@@ -204,7 +210,15 @@ function generateFieldLine(field: Field, subIndent: string): string {
     if (field.dim?.toString().trim()) {
         line += ` ${format.dimx}(${field.dim.toString().trim()})`;
     };
-    
+
+    // Add position specification if provided (numeric -> pos(N), otherwise -> samepos(fieldName))
+    if (field.pos?.toString().trim()) {
+        const posValue = field.pos.toString().trim();
+        line += /^\d+$/.test(posValue)
+            ? ` ${format.posx}(${posValue})`
+            : ` ${format.samePosx}(${posValue})`;
+    };
+
     return line + ';';
 };
 

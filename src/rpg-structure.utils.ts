@@ -256,6 +256,48 @@ function validateDimension(input: string): ValidationResult {
 };
 
 /**
+ * Validates position input for a field: either a positive integer (pos(N)) or the
+ * name of another existing sibling field (samepos(name))
+ * @param input - Position input string
+ * @param siblings - Sibling fields the position can reference via samepos
+ * @param selfName - Name of the field being edited (cannot reference itself)
+ * @returns Validation result
+ */
+function validatePosition(input: string, siblings: Field[], selfName: string): ValidationResult {
+    const trimmed = input.trim();
+
+    if (trimmed === '') {
+        return { isValid: true }; // Empty is allowed (removes position)
+    };
+
+    if (INTEGER_REGEX.test(trimmed)) {
+        const value = parseInt(trimmed, 10);
+        if (value <= 0) {
+            return { isValid: false, errorMessage: 'Position must be greater than 0.' };
+        };
+        return { isValid: true };
+    };
+
+    const nameValidation = validateFieldName(trimmed);
+    if (!nameValidation.isValid) {
+        return { isValid: false, errorMessage: 'Enter a positive integer or the name of an existing field.' };
+    };
+
+    if (trimmed.toLowerCase() === selfName.toLowerCase()) {
+        return { isValid: false, errorMessage: 'A field cannot reference itself for samepos.' };
+    };
+
+    const referenced = siblings.find(
+        field => field.name.toLowerCase() === trimmed.toLowerCase() && !field.isStructure
+    );
+    if (!referenced) {
+        return { isValid: false, errorMessage: `Field "${trimmed}" not found among sibling fields.` };
+    };
+
+    return { isValid: true };
+};
+
+/**
  * Validates initialization value based on field type
  * @param type - Field type
  * @param init - Initialization value
@@ -391,7 +433,7 @@ export async function insertField(
 
         // Create and add the field WITHOUT dimension
         const newId = getNextIdNumber(fields);
-        const newField = new FieldItem(newId, name, type, length, init?.trim(), undefined, false, []); // dim = undefined
+        const newField = new FieldItem(newId, name, type, length, init?.trim(), undefined, undefined, false, []); // dim = undefined, pos = undefined
 
         if (!isSubstructure) {
             provider.addFieldBefore(newField, position);
@@ -466,7 +508,7 @@ export async function insertSubstructure(provider: FieldsTreeDataProvider): Prom
 
         // Create and add the substructure
         const newId = getNextIdNumber(fields);
-        const newField = new FieldItem(newId, name, '', length, undefined, undefined, true, []);
+        const newField = new FieldItem(newId, name, '', length, undefined, undefined, undefined, true, []);
         provider.addField(newField);
 
         updateFieldsContext();
@@ -615,6 +657,29 @@ export function findFieldById(fieldList: Field[] = fields, id: number): Field | 
     return null;
 };
 
+/**
+ * Finds the sibling array (same nesting level) that contains the field with the given ID
+ * @param fieldList - List of fields to search in (defaults to global fields)
+ * @param id - ID number to search for
+ * @returns The array containing the field, or null if not found
+ */
+function findSiblingFields(fieldList: Field[] = fields, id: number): Field[] | null {
+    for (const field of fieldList) {
+        if (field.idNumber === id) {
+            return fieldList;
+        };
+
+        if (field.isStructure && field.fields.length > 0) {
+            const found = findSiblingFields(field.fields, id);
+            if (found) {
+                return found;
+            };
+        };
+    };
+
+    return null;
+};
+
 export async function importStructureAtCursor(): Promise<boolean> {
     const editor = vscode.window.activeTextEditor;
     if (!editor) {
@@ -689,6 +754,11 @@ export async function addDimensionToField(fieldId: number, provider: FieldsTreeD
         return;
     };
 
+    if (field.pos) {
+        vscode.window.showErrorMessage('Dimension cannot be added to a field that already has a position.');
+        return;
+    };
+
     try {
         const currentDimension = field.dim ? field.dim.toString() : '';
         const prompt = currentDimension ? 
@@ -732,5 +802,72 @@ export async function addDimensionToField(fieldId: number, provider: FieldsTreeD
     } catch (error) {
         console.error('Error adding dimension to field:', error);
         vscode.window.showErrorMessage(`Failed to modify dimension: ${error instanceof Error ? error.message : String(error)}`);
+    };
+};
+
+/**
+ * Adds or modifies the position (pos/samepos) for an existing field.
+ * Not allowed on substructures or on fields that already have a dimension.
+ * @param fieldId - ID of the field to update
+ * @param provider - Fields tree data provider
+*/
+export async function addPositionToField(fieldId: number, provider: FieldsTreeDataProvider): Promise<void> {
+    const field = findFieldById(fields, fieldId);
+    if (!field) {
+        vscode.window.showErrorMessage('Field not found.');
+        return;
+    };
+
+    if (field.isStructure) {
+        vscode.window.showErrorMessage('Position cannot be added to a substructure.');
+        return;
+    };
+
+    if (field.dim) {
+        vscode.window.showErrorMessage('Position cannot be added to a field that already has a dimension.');
+        return;
+    };
+
+    const siblings = findSiblingFields(fields, fieldId) ?? fields;
+
+    try {
+        const currentPosition = field.pos ?? '';
+        const prompt = currentPosition ?
+            `Modify position (current: ${currentPosition})` :
+            'Add position to field: a number for pos(N), or the name of another field for samepos(name)';
+
+        const posInput = await vscode.window.showInputBox({
+            prompt: prompt,
+            placeHolder: currentPosition || 'e.g. 5 or fieldName',
+            value: currentPosition,
+            validateInput: (input) => {
+                const validation = validatePosition(input, siblings, field.name);
+                return validation.isValid ? undefined : validation.errorMessage;
+            }
+        });
+
+        if (posInput === undefined) return;
+
+        if (posInput.trim() === '') {
+            field.pos = undefined;
+            provider.refresh();
+            vscode.window.showInformationMessage(`Position removed from field "${field.name}".`);
+            return;
+        };
+
+        const newPosition = posInput.trim();
+        const oldPosition = field.pos;
+        field.pos = newPosition;
+        provider.refresh();
+
+        const message = oldPosition ?
+            `Position for field "${field.name}" changed from ${oldPosition} to ${newPosition}.` :
+            `Position ${newPosition} added to field "${field.name}".`;
+
+        vscode.window.showInformationMessage(message);
+
+    } catch (error) {
+        console.error('Error adding position to field:', error);
+        vscode.window.showErrorMessage(`Failed to modify position: ${error instanceof Error ? error.message : String(error)}`);
     };
 };

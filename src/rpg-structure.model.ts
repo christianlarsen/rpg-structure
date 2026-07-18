@@ -61,6 +61,8 @@ export interface Field {
     init?: string;
     /** Optional dimension for array fields */
     dim?: number;
+    /** Optional position: either a numeric literal (pos(N)) or the name of another field (samepos(name)) */
+    pos?: string;
     /** Whether this field is a substructure containing nested fields */
     isStructure: boolean;
     /** Array of nested fields (only used when isStructure is true) */
@@ -84,8 +86,14 @@ export interface RpgFormat {
     varx: string;
     /** Auto length keyword (*auto, *Auto, *AUTO) */
     autox: string;
+    /** Anonymous structure keyword (*n, *N, *N) */
+    anonymousx: string;
     /** Dimension keyword (dim, Dim, DIM) */
     dimx: string;
+    /** Position keyword (pos, Pos, POS) */
+    posx: string;
+    /** Same-position keyword (samepos, Samepos, SAMEPOS) */
+    samePosx: string;
     /** Initialize keyword (inz, Inz, INZ) */
     inz: string;
     /** Mapping of data types to their format-specific representations */
@@ -122,7 +130,9 @@ export const COMMANDS = {
     /** Command import structure from list */
     IMPORT_FROM_LIST: 'rpgStructure.showStructureList',
     /** Command add dimension to a field */
-    ADD_DIMENSION: 'rpgStructure.addDimension'
+    ADD_DIMENSION: 'rpgStructure.addDimension',
+    /** Command add position to a field */
+    ADD_POSITION: 'rpgStructure.addPosition'
 } as const;
 
 /**
@@ -164,7 +174,10 @@ export const FORMAT_MAP: Readonly<Record<StructureFormat, RpgFormat>> = {
         qualified: 'qualified',
         varx: '*var',
         autox: '*auto',
+        anonymousx: '*n',
         dimx: 'dim',
+        posx: 'pos',
+        samePosx: 'samepos',
         inz: 'inz',
         typeMap: {
             char: 'char',
@@ -189,7 +202,10 @@ export const FORMAT_MAP: Readonly<Record<StructureFormat, RpgFormat>> = {
         qualified: 'Qualified',
         varx: '*Var',
         autox: '*Auto',
+        anonymousx: '*N',
         dimx: 'Dim',
+        posx: 'Pos',
+        samePosx: 'Samepos',
         inz: 'Inz',
         typeMap: {
             char: 'Char',
@@ -214,7 +230,10 @@ export const FORMAT_MAP: Readonly<Record<StructureFormat, RpgFormat>> = {
         qualified: 'QUALIFIED',
         varx: '*VAR',
         autox: '*AUTO',
+        anonymousx: '*N',
         dimx: 'DIM',
+        posx: 'POS',
+        samePosx: 'SAMEPOS',
         inz: 'INZ',
         typeMap: {
             char: 'CHAR',
@@ -294,6 +313,7 @@ export function createField(
         length: undefined,
         init: undefined,
         dim: undefined,
+        pos: undefined,
         isStructure,
         fields: []
     };
@@ -325,8 +345,19 @@ export function getFormatConfig(format: StructureFormat): RpgFormat {
 };
 
 /**
+ * Checks whether a structure name denotes an anonymous structure (*n).
+ * Anonymous structures are never qualified and cannot have a dimension.
+ *
+ * @param name The structure name to check
+ * @returns True if the name is the anonymous structure marker (*n, case-insensitive)
+ */
+export function isAnonymousName(name: string): boolean {
+    return name.trim().toLowerCase() === '*n';
+};
+
+/**
  * Checks if the current header contains all required information.
- * 
+ *
  * @returns True if header has both name and type filled
  */
 export function hasValidHeader(): boolean {

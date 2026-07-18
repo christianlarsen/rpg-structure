@@ -5,10 +5,10 @@
 */
 
 import * as vscode from 'vscode';
-import { handleInsert, updateContext, deleteField, insertField, insertSubstructure, insertFieldSubstructure, addDimensionToField } from './rpg-structure.utils';
+import { handleInsert, updateContext, deleteField, insertField, insertSubstructure, insertFieldSubstructure, addDimensionToField, addPositionToField } from './rpg-structure.utils';
 import { HeaderTreeDataProvider, StructureItem, FieldsTreeDataProvider, FieldItem, ConfigProvider, ConfigItem } from './rpg-structure.providers';
 import { loadConfiguration, saveConfiguration, currentConfiguration } from './rpg-structure.configuration';
-import { header, fields, COMMANDS, TREE_DATA_PROVIDERS, StructureFormat, StructureType, Field } from './rpg-structure.model';
+import { header, fields, COMMANDS, TREE_DATA_PROVIDERS, StructureFormat, StructureType, Field, isAnonymousName } from './rpg-structure.model';
 import { isPositiveInteger, updateHeaderContext, updateFieldsContext } from './rpg-structure.helper';
 import { RpgStructureParser, ParsedStructure } from './rpg-structure.parser';
 
@@ -152,6 +152,10 @@ function registerCommands(
 
         vscode.commands.registerCommand(COMMANDS.ADD_DIMENSION, async(item: Field) => {
             await addDimensionToField(item.idNumber , fieldsProvider);
+        }),
+
+        vscode.commands.registerCommand(COMMANDS.ADD_POSITION, async(item: Field) => {
+            await addPositionToField(item.idNumber, fieldsProvider);
         })
     ];
     
@@ -189,7 +193,7 @@ async function handleStructureItemClick(item: StructureItem, provider: HeaderTre
 async function handleNameInput(item: StructureItem, provider: HeaderTreeDataProvider): Promise<void> {
     const inputName = await vscode.window.showInputBox({
         prompt: 'Enter a name for the structure',
-        placeHolder: 'e.g. structure',
+        placeHolder: 'e.g. structure, or *n for an anonymous structure',
         value: header.name,
         validateInput: (value: string) => {
             if (!value || value.trim() === '') {
@@ -210,6 +214,14 @@ async function handleNameInput(item: StructureItem, provider: HeaderTreeDataProv
     
     header.name = inputName.trim();
     item.label = `NAME: ${header.name}`;
+
+    // Anonymous structures (*n) are never qualified and cannot have a dimension,
+    // so they are always forced back to a plain "Default" type.
+    if (isAnonymousName(header.name)) {
+        header.type = 'Default';
+        header.dimension = '0';
+    };
+
     provider.refresh();
 };
 
@@ -219,18 +231,29 @@ async function handleNameInput(item: StructureItem, provider: HeaderTreeDataProv
  * @param provider - The header tree data provider
  */
 async function handleDimensionInput(item: StructureItem, provider: HeaderTreeDataProvider): Promise<void> {
+    if (isAnonymousName(header.name)) {
+        vscode.window.showWarningMessage('An anonymous structure (*n) cannot have a dimension.');
+        return;
+    };
+
     if (header.type === 'template') {
         vscode.window.showWarningMessage('A template structure cannot have a dimension.');
         return;
     };
-    
+
+    // "Default" structures are plain qualified structures: dimension is optional,
+    // and turns them into an array only when explicitly provided.
+    const isDimensionOptional = header.type === 'Default';
+
     const inputDimension = await vscode.window.showInputBox({
-        prompt: 'Enter dimension for the structure',
+        prompt: isDimensionOptional
+            ? 'Enter dimension for the structure (optional - leave empty for a plain qualified structure)'
+            : 'Enter dimension for the structure',
         placeHolder: 'e.g. 10000',
-        value: header.dimension ?? '',
+        value: header.dimension && header.dimension !== '0' ? header.dimension : '',
         validateInput: (value: string) => {
             if (!value || value.trim() === '') {
-                return 'Dimension is required';
+                return isDimensionOptional ? null : 'Dimension is required';
             };
             if (!isPositiveInteger(value.trim())) {
                 return 'Dimension must be a positive integer';
@@ -244,7 +267,15 @@ async function handleDimensionInput(item: StructureItem, provider: HeaderTreeDat
     };
     
     if (inputDimension.trim() === '') {
-        vscode.window.showErrorMessage('The dimension is required.');
+        if (!isDimensionOptional) {
+            vscode.window.showErrorMessage('The dimension is required.');
+            return;
+        };
+
+        // '0' is the internal sentinel meaning "no dimension set".
+        header.dimension = '0';
+        item.label = 'DIMENSION: (Optional)';
+        provider.refresh();
         return;
     };
     
@@ -264,6 +295,11 @@ async function handleDimensionInput(item: StructureItem, provider: HeaderTreeDat
  * @param provider - The header tree data provider
  */
 async function handleTypeInput(item: StructureItem, provider: HeaderTreeDataProvider): Promise<void> {
+    if (isAnonymousName(header.name)) {
+        vscode.window.showWarningMessage('An anonymous structure (*n) is always type "Default".');
+        return;
+    };
+
     const structureTypes: StructureType[] = ['Default', 'template', '*var', '*auto'];
     
     const inputType = await vscode.window.showQuickPick(structureTypes, {
@@ -536,5 +572,3 @@ async function importFromStructureList(
         vscode.window.showErrorMessage(`Import failed: ${error instanceof Error ? error.message : String(error)}`);
     }
 }
-
-

@@ -5,7 +5,7 @@
 */
 
 import * as vscode from 'vscode';
-import { Field, fields, header } from './rpg-structure.model';
+import { Field, fields, header, isAnonymousName } from './rpg-structure.model';
 import { reassignIdNumbers, findFieldById } from './rpg-structure.utils';
 import { getConfiguration } from './rpg-structure.configuration';
 
@@ -51,10 +51,14 @@ export class HeaderTreeDataProvider implements vscode.TreeDataProvider<Structure
 
         // Determine dimension label based on structure type
         let dimensionLabel: string;
-        if (header.type === 'template') {
+        if (isAnonymousName(header.name)) {
+            dimensionLabel = 'DIMENSION: (None)';
+        } else if (header.type === 'template') {
             dimensionLabel = 'DIMENSION: (None)';
         } else if (typeof header.dimension === 'undefined' || header.dimension === '0') {
-            dimensionLabel = 'DIMENSION: (Required)';
+            dimensionLabel = header.type === 'Default'
+                ? 'DIMENSION: (Optional)'
+                : 'DIMENSION: (Required)';
         } else {
             dimensionLabel = `DIMENSION: ${header.dimension}`;
         }
@@ -129,13 +133,14 @@ export class FieldsTreeDataProvider implements vscode.TreeDataProvider<vscode.Tr
             // Return root level fields
             return Promise.resolve(fields.map(field =>
                 new FieldItem(
-                    field.idNumber, 
-                    field.name, 
-                    field.type, 
-                    field.length, 
-                    field.init, 
-                    field.dim, 
-                    field.isStructure, 
+                    field.idNumber,
+                    field.name,
+                    field.type,
+                    field.length,
+                    field.init,
+                    field.dim,
+                    field.pos,
+                    field.isStructure,
                     field.fields
                 )
             ));
@@ -145,13 +150,14 @@ export class FieldsTreeDataProvider implements vscode.TreeDataProvider<vscode.Tr
         if (element instanceof FieldItem && element.isStructure) {
             const children = element.fields.map(field =>
                 new FieldItem(
-                    field.idNumber, 
-                    field.name, 
-                    field.type, 
-                    field.length, 
-                    field.init, 
-                    field.dim, 
-                    field.isStructure, 
+                    field.idNumber,
+                    field.name,
+                    field.type,
+                    field.length,
+                    field.init,
+                    field.dim,
+                    field.pos,
+                    field.isStructure,
                     field.fields
                 )
             );
@@ -235,6 +241,7 @@ export class FieldItem extends vscode.TreeItem {
         public length: string | undefined,
         public init: string | undefined,
         public dim: number | undefined,
+        public pos: string | undefined,
         public readonly isStructure: boolean,
         public readonly fields: Field[]
     ) {
@@ -259,16 +266,26 @@ export class FieldItem extends vscode.TreeItem {
             this.tooltip = `Substructure: ${this.name}`;
             this.description = this.length ? `dim(${this.length})` : '';
         } else {
-            this.contextValue = 'rpg-structure-fieldItem';
+            // A field can have either a dimension or a position/samepos, never both.
+            // The contextValue drives the "when" clauses in package.json that show/hide
+            // the "Add Dimension" and "Add Position" inline icons accordingly.
+            if (this.dim) {
+                this.contextValue = 'rpg-structure-fieldItem-dim';
+            } else if (this.pos) {
+                this.contextValue = 'rpg-structure-fieldItem-pos';
+            } else {
+                this.contextValue = 'rpg-structure-fieldItem';
+            };
             this.iconPath = new vscode.ThemeIcon('symbol-field');
             this.tooltip = `Field: ${this.name}`;
-            
-            // Build description with type, length, dimension, and initialization
+
+            // Build description with type, length, dimension/position, and initialization
             let description = this.type;
             if (this.length) description += `(${this.length})`;
             if (this.dim) description += ` dim(${this.dim})`;
+            if (this.pos) description += /^\d+$/.test(this.pos) ? ` pos(${this.pos})` : ` samepos(${this.pos})`;
             if (this.init) description += ` inz(${this.init})`;
-            
+
             this.description = description;
         };
     };
@@ -283,6 +300,15 @@ export class FieldItem extends vscode.TreeItem {
     };
 
     /**
+     * Updates the position and refreshes display properties
+     * @param newPos New position value (numeric literal or referenced field name)
+     */
+    public updatePosition(newPos: string | undefined): void {
+        this.pos = newPos;
+        this.updateDisplayProperties();
+    };
+
+    /**
      * Updates field properties and refreshes display
      * @param updates Object containing the properties to update
      */
@@ -292,18 +318,20 @@ export class FieldItem extends vscode.TreeItem {
         length?: string | undefined;
         init?: string | undefined;
         dim?: number | undefined;
+        pos?: string | undefined;
     }): void {
         if (updates.name !== undefined) this.name = updates.name;
         if (updates.type !== undefined) this.type = updates.type;
         if (updates.length !== undefined) this.length = updates.length;
         if (updates.init !== undefined) this.init = updates.init;
         if (updates.dim !== undefined) this.dim = updates.dim;
-        
+        if (updates.pos !== undefined) this.pos = updates.pos;
+
         // Update the label if name changed
         if (updates.name !== undefined) {
             this.label = updates.name;
         }
-        
+
         this.updateDisplayProperties();
     };
 

@@ -22,18 +22,18 @@ export interface ParsedStructure {
  */
 export class RpgStructureParser {
     private static readonly STRUCTURE_START_PATTERNS = [
-        /^\s*(dcl-ds|Dcl-ds|DCL-DS)\s+([a-zA-Z_][a-zA-Z0-9_@#]*)\s*(.*?);/i,
+        /^\s*(dcl-ds|Dcl-ds|DCL-DS)\s+([a-zA-ZÑñ_][a-zA-ZÑñ0-9_@#]*|\*[nN])\s*(.*?);/i,
     ];
 
     private static readonly STRUCTURE_END_PATTERNS = [
         /^\s*(end-ds|End-ds|END-DS)\s*;/i,
     ];
 
-    private static readonly FIELD_PATTERN = 
-        /^\s*([a-zA-Z_][a-zA-Z0-9_@#]*)\s+([a-zA-Z]+)(?:\(([^)]+)\))?\s*(?:(inz|Inz|INZ)\(([^)]+)\))?\s*(?:(dim|Dim|DIM)\(([^)]+)\))?\s*;/i;
+    private static readonly FIELD_PATTERN =
+        /^\s*([a-zA-ZÑñ_][a-zA-ZÑñ0-9_@#]*)\s+([a-zA-Z]+)(?:\(([^)]+)\))?\s*(?:(inz|Inz|INZ)\(([^)]+)\))?\s*(?:(dim|Dim|DIM)\(([^)]+)\))?\s*(?:(pos|Pos|POS|samepos|Samepos|SAMEPOS)\(([^)]+)\))?\s*;/i;
 
-    private static readonly SUBSTRUCTURE_START_PATTERN = 
-        /^\s*([a-zA-Z_][a-zA-Z0-9_@#]*)\s+(likeds|LikeDs|LIKEDS|template|Template|TEMPLATE)\s*(?:\(([^)]+)\))?\s*;/i;
+    private static readonly SUBSTRUCTURE_START_PATTERN =
+        /^\s*([a-zA-ZÑñ_][a-zA-ZÑñ0-9_@#]*)\s+(likeds|LikeDs|LIKEDS|template|Template|TEMPLATE)\s*(?:\(([^)]+)\))?\s*;/i;
 
     /**
      * Parses RPG structure from text content at specified cursor position
@@ -229,7 +229,7 @@ export class RpgStructureParser {
             }
 
             // Check for nested structure (dcl-ds inside another structure)
-            const nestedStructMatch = line.match(/^\s*(dcl-ds|Dcl-ds|DCL-DS)\s+([a-zA-Z_][a-zA-Z0-9_@#]*)\s*(.*?);/i);
+            const nestedStructMatch = line.match(/^\s*(dcl-ds|Dcl-ds|DCL-DS)\s+([a-zA-ZÑñ_][a-zA-ZÑñ0-9_@#]*|\*[nN])\s*(.*?);/i);
             if (nestedStructMatch) {
                 const nestedStruct = this.parseNestedStructure(lines, i, idCounter++, format);
                 if (nestedStruct.field) {
@@ -277,7 +277,7 @@ export class RpgStructureParser {
         format: StructureFormat
     ): { field: Field | null; nextLine: number } {
         const line = lines[startIndex];
-        const match = line.match(/^\s*(dcl-ds|Dcl-ds|DCL-DS)\s+([a-zA-Z_][a-zA-Z0-9_@#]*)\s*(.*?);/i);
+        const match = line.match(/^\s*(dcl-ds|Dcl-ds|DCL-DS)\s+([a-zA-ZÑñ_][a-zA-ZÑñ0-9_@#]*|\*[nN])\s*(.*?);/i);
         
         if (!match) {
             return { field: null, nextLine: startIndex + 1 };
@@ -420,6 +420,7 @@ export class RpgStructureParser {
         const init = match[5] ? match[5].trim() : undefined;
         const dimStr = match[7] ? match[7].trim() : undefined;
         const dim = dimStr ? parseInt(dimStr, 10) : undefined;
+        const pos = match[9] ? match[9].trim() : undefined;
 
         // Reverse map type from format-specific to generic
         const formatConfig = FORMAT_MAP[format];
@@ -442,6 +443,7 @@ export class RpgStructureParser {
             length,
             init,
             dim,
+            pos,
             isStructure: false,
             fields: []
         };

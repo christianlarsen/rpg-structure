@@ -121,6 +121,8 @@ export const COMMANDS = {
     GENERATE: 'rpgStructure.generate',
     /** Command to add a field to an existing substructure */
     ADD_FIELD_TO_SUBSTRUCTURE: 'rpgStructure.addFieldToSubstructure',
+    /** Command to add a nested substructure inside an existing substructure */
+    ADD_SUBSTRUCTURE_TO_SUBSTRUCTURE: 'rpgStructure.addSubstructureToSubstructure',
     /** Command to delete a field from the structure */
     DELETE_FIELD: 'rpgStructure.deleteField',
     /** Command fired when a configuration item is clicked */
@@ -132,7 +134,9 @@ export const COMMANDS = {
     /** Command add dimension to a field */
     ADD_DIMENSION: 'rpgStructure.addDimension',
     /** Command add position to a field */
-    ADD_POSITION: 'rpgStructure.addPosition'
+    ADD_POSITION: 'rpgStructure.addPosition',
+    /** Command to edit a field's name and type */
+    EDIT_FIELD: 'rpgStructure.editField'
 } as const;
 
 /**

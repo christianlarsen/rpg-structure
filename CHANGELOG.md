@@ -7,6 +7,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - More RPG Structure features and improvements planned.
 - Bug fixes and stability enhancements.
 
+## [1.3.0] - 2026-07-19
+### Fixes
+- Structures ending with a named `end-ds` (e.g. `end-ds myStructure;`) were not recognized when importing.
+- Field IDs could collide between different nesting branches, causing actions like "Add substructure" to sometimes target the wrong parent structure.
+### Added
+- Ability to edit an existing field's name, type, length, and initialization value from the tree view (pencil icon).
+- Ability to add a substructure inside another substructure, supporting nested substructures at any depth.
+- The "Configuration" view now starts collapsed by default, while the other views remain expanded.
+- Editing a field now proposes the previous length and init value when switching between compatible types (`char`/`varchar`, `zoned`/`packed`).
+
 ## [1.2.3] - 2026-07-18
 ### Fixes
 - The button that generates the structures were not working correctly.

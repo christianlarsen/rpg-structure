@@ -26,7 +26,7 @@ export class RpgStructureParser {
     ];
 
     private static readonly STRUCTURE_END_PATTERNS = [
-        /^\s*(end-ds|End-ds|END-DS)\s*;/i,
+        /^\s*(end-ds|End-ds|END-DS)\s*([a-zA-ZÑñ_][a-zA-ZÑñ0-9_@#]*)?\s*;/i,
     ];
 
     private static readonly FIELD_PATTERN =
@@ -213,16 +213,18 @@ export class RpgStructureParser {
     }
 
     /**
-     * Parses fields from structure content lines
+     * Parses fields from structure content lines.
+     * @param counter - Shared, mutable ID counter threaded through recursive calls so that
+     * every field in the structure's tree (at any nesting depth) gets a unique idNumber.
+     * Defaults to a fresh counter, which is correct for top-level parse entry points.
      */
-    private static parseFields(lines: string[], format: StructureFormat): Field[] {
+    private static parseFields(lines: string[], format: StructureFormat, counter: { value: number } = { value: 0 }): Field[] {
         const fields: Field[] = [];
-        let idCounter = 0;
         let i = 0;
 
         while (i < lines.length) {
             const line = lines[i].trim();
-            
+
             if (!line || line.startsWith('//')) {
                 i++;
                 continue;
@@ -231,7 +233,7 @@ export class RpgStructureParser {
             // Check for nested structure (dcl-ds inside another structure)
             const nestedStructMatch = line.match(/^\s*(dcl-ds|Dcl-ds|DCL-DS)\s+([a-zA-ZÑñ_][a-zA-ZÑñ0-9_@#]*|\*[nN])\s*(.*?);/i);
             if (nestedStructMatch) {
-                const nestedStruct = this.parseNestedStructure(lines, i, idCounter++, format);
+                const nestedStruct = this.parseNestedStructure(lines, i, counter.value++, format, counter);
                 if (nestedStruct.field) {
                     fields.push(nestedStruct.field);
                     i = nestedStruct.nextLine;
@@ -244,7 +246,7 @@ export class RpgStructureParser {
             // Check for substructure (likeds/template without dcl-ds)
             const subStructMatch = line.match(this.SUBSTRUCTURE_START_PATTERN);
             if (subStructMatch) {
-                const subStruct = this.parseSubstructure(lines, i, idCounter++, format);
+                const subStruct = this.parseSubstructure(lines, i, counter.value++, format, counter);
                 if (subStruct.field) {
                     fields.push(subStruct.field);
                     i = subStruct.nextLine;
@@ -257,7 +259,7 @@ export class RpgStructureParser {
             // Parse regular field
             const fieldMatch = line.match(this.FIELD_PATTERN);
             if (fieldMatch) {
-                const field = this.parseFieldFromMatch(fieldMatch, idCounter++, format);
+                const field = this.parseFieldFromMatch(fieldMatch, counter.value++, format);
                 fields.push(field);
             }
 
@@ -271,10 +273,11 @@ export class RpgStructureParser {
      * Parses a nested structure (dcl-ds within another structure) and its fields
      */
     private static parseNestedStructure(
-        lines: string[], 
-        startIndex: number, 
-        id: number, 
-        format: StructureFormat
+        lines: string[],
+        startIndex: number,
+        id: number,
+        format: StructureFormat,
+        counter: { value: number }
     ): { field: Field | null; nextLine: number } {
         const line = lines[startIndex];
         const match = line.match(/^\s*(dcl-ds|Dcl-ds|DCL-DS)\s+([a-zA-ZÑñ_][a-zA-ZÑñ0-9_@#]*|\*[nN])\s*(.*?);/i);
@@ -330,7 +333,7 @@ export class RpgStructureParser {
 
         // Parse fields between dcl-ds and end-ds
         const structureLines = lines.slice(startIndex + 1, endIndex);
-        const nestedFields = this.parseFields(structureLines, format);
+        const nestedFields = this.parseFields(structureLines, format, counter);
 
         const field: Field = {
             idNumber: id,
@@ -350,10 +353,11 @@ export class RpgStructureParser {
      * Parses a substructure and its nested fields
      */
     private static parseSubstructure(
-        lines: string[], 
-        startIndex: number, 
-        id: number, 
-        format: StructureFormat
+        lines: string[],
+        startIndex: number,
+        id: number,
+        format: StructureFormat,
+        counter: { value: number }
     ): { field: Field | null; nextLine: number } {
         const line = lines[startIndex];
         const match = line.match(this.SUBSTRUCTURE_START_PATTERN);
@@ -394,7 +398,7 @@ export class RpgStructureParser {
 
         // Parse nested fields (everything between start and end with deeper indentation)
         const subLines = lines.slice(startIndex + 1, endIndex);
-        const nestedFields = this.parseFields(subLines, format);
+        const nestedFields = this.parseFields(subLines, format, counter);
 
         const field: Field = {
             idNumber: id,

@@ -19,7 +19,9 @@ With RPG Structure, you can quickly design structures, templates, and substructu
   - Size (required, properly formatted)
   - Initialization value (optional)
 
-- **Create substructures** and add fields inside them.
+- **Create substructures** and add fields inside them, including substructures nested inside other substructures (at any depth).
+
+- **Edit existing fields** (name, type, length, and initialization value) directly from the tree view.
 
 - **Export your structure** to the active editor at any position.
 
@@ -69,10 +71,13 @@ With RPG Structure, you can quickly design structures, templates, and substructu
 See the full changelog [here](./CHANGELOG.md).
 
 ### Latest
-**1.2.3** - 2026-07-18 
-- Fixes: The button that generates the structures were not working correctly.
-- Added: New "unnamed" data structures implementation.
-- Added: Posibility of assigning a position (pos / samepos) to a field.
+**1.3.0** - 2026-07-19
+- Fixes: Structures ending with a named `end-ds` (e.g. `end-ds myStructure;`) were not recognized when importing.
+- Fixes: Field IDs could collide between different nesting branches, causing actions like "Add substructure" to sometimes target the wrong parent structure.
+- Added: Ability to edit an existing field's name, type, length, and initialization value from the tree view (pencil icon).
+- Added: Ability to add a substructure inside another substructure, supporting nested substructures at any depth.
+- Added: The "Configuration" view now starts collapsed by default, while the other views remain expanded.
+- Added: Editing a field now proposes the previous length and init value when switching between compatible types (`char`/`varchar`, `zoned`/`packed`).
 
 ---
 

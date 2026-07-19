@@ -51,6 +51,28 @@ const DECIMAL_REGEX = /^\d+:\d+$/;
 const NUMERIC_VALUE_REGEX = /^\d+(\.\d+)?$/;
 const QUOTED_STRING_REGEX = /^'.*'$/;
 
+// Groups of field types whose length/init values are compatible with one another,
+// so editing between them can keep proposing the original length and init value.
+const COMPATIBLE_TYPE_GROUPS: FieldType[][] = [
+    ['char', 'varchar'],
+    ['zoned', 'packed']
+];
+
+/**
+ * Checks whether two field types are compatible enough to reuse the same length/init value
+ * @param typeA - First field type
+ * @param typeB - Second field type
+ * @returns True if the types are identical or belong to the same compatibility group
+ */
+function areTypesCompatible(typeA: string, typeB: string): boolean {
+    const a = typeA.trim().toLowerCase();
+    const b = typeB.trim().toLowerCase();
+
+    if (a === b) return true;
+
+    return COMPATIBLE_TYPE_GROUPS.some(group => group.includes(a as FieldType) && group.includes(b as FieldType));
+};
+
 /**
  * Interface for field creation parameters
  */
@@ -460,10 +482,23 @@ export async function insertField(
 };
 
 /**
- * Creates a new substructure and adds it to the fields
+ * Creates a new substructure and adds it either at the root level or nested inside
+ * an existing substructure (to any depth).
  * @param provider - Fields tree data provider
+ * @param parentId - ID of the parent substructure to nest inside; omit to add at the root level
  */
-export async function insertSubstructure(provider: FieldsTreeDataProvider): Promise<void> {
+export async function insertSubstructure(provider: FieldsTreeDataProvider, parentId?: number): Promise<void> {
+    let siblings: Field[] = fields;
+
+    if (parentId !== undefined) {
+        const parent = findFieldById(fields, parentId);
+        if (!parent || !parent.isStructure) {
+            vscode.window.showErrorMessage('Target substructure not found.');
+            return;
+        };
+        siblings = parent.fields;
+    };
+
     try {
         // Get substructure name
         const name = await vscode.window.showInputBox({
@@ -473,11 +508,11 @@ export async function insertSubstructure(provider: FieldsTreeDataProvider): Prom
                 if (!validation.isValid) {
                     return validation.errorMessage;
                 };
-                
-                if (fieldNameExists(value)) {
-                    return `A field named "${value}" already exists.`;
+
+                if (fieldNameExists(value, siblings)) {
+                    return `A field named "${value}" already exists at this level.`;
                 };
-                
+
                 return undefined;
             }
         });
@@ -509,7 +544,12 @@ export async function insertSubstructure(provider: FieldsTreeDataProvider): Prom
         // Create and add the substructure
         const newId = getNextIdNumber(fields);
         const newField = new FieldItem(newId, name, '', length, undefined, undefined, undefined, true, []);
-        provider.addField(newField);
+
+        if (parentId === undefined) {
+            provider.addField(newField);
+        } else {
+            provider.addFieldStructure(fields, newField, parentId);
+        };
 
         updateFieldsContext();
 
@@ -526,6 +566,15 @@ export async function insertSubstructure(provider: FieldsTreeDataProvider): Prom
  */
 export function insertFieldSubstructure(idNumber: number, provider: FieldsTreeDataProvider): void {
     insertField(true, idNumber, provider);
+};
+
+/**
+ * Inserts a new substructure nested inside another substructure (to any depth)
+ * @param idNumber - ID number of the parent substructure
+ * @param provider - Fields tree data provider
+ */
+export function insertSubstructureInSubstructure(idNumber: number, provider: FieldsTreeDataProvider): void {
+    insertSubstructure(provider, idNumber);
 };
 
 /**
@@ -869,5 +918,99 @@ export async function addPositionToField(fieldId: number, provider: FieldsTreeDa
     } catch (error) {
         console.error('Error adding position to field:', error);
         vscode.window.showErrorMessage(`Failed to modify position: ${error instanceof Error ? error.message : String(error)}`);
+    };
+};
+
+/**
+ * Edits an existing field's name and, for regular fields, its type, length, and init value.
+ * Substructures can only have their name edited.
+ * @param fieldId - ID of the field to edit
+ * @param provider - Fields tree data provider
+ */
+export async function editField(fieldId: number, provider: FieldsTreeDataProvider): Promise<void> {
+    const field = findFieldById(fields, fieldId);
+    if (!field) {
+        vscode.window.showErrorMessage('Field not found.');
+        return;
+    };
+
+    try {
+        const name = await vscode.window.showInputBox({
+            prompt: 'Field name',
+            value: field.name,
+            validateInput: (value: string) => {
+                const validation = validateFieldName(value);
+                if (!validation.isValid) return validation.errorMessage;
+                if (value.toLowerCase() !== field.name.toLowerCase() && fieldNameExists(value)) {
+                    return `A field named "${value}" already exists.`;
+                };
+                return undefined;
+            }
+        });
+
+        if (name === undefined) return; // User cancelled
+
+        if (field.isStructure) {
+            field.name = name.trim();
+            provider.refresh();
+            vscode.window.showInformationMessage(`Substructure renamed to "${name.trim()}".`);
+            return;
+        };
+
+        const typeSelected = await vscode.window.showQuickPick(FIELD_TYPES, {
+            placeHolder: 'Choose field type'
+        });
+        if (!typeSelected) return; // User cancelled
+
+        const type = typeSelected as FieldType;
+        const keepsType = areTypesCompatible(field.type, type);
+
+        // Get field length (if required)
+        let length: string | undefined;
+        const lengthRequiredTypes: FieldType[] = ['char', 'varchar', 'int', 'packed', 'zoned', 'uns', 'bin'];
+
+        if (lengthRequiredTypes.includes(type)) {
+            const currentLength = keepsType ? field.length ?? '' : '';
+            const lengthInput = await vscode.window.showInputBox({
+                prompt: 'Field length',
+                placeHolder: type === 'packed' || type === 'zoned' ? 'e.g. 5 or 13:2' : 'e.g. 10',
+                value: currentLength,
+                valueSelection: [0, currentLength.length],
+                validateInput: (input) => {
+                    const validation = validateFieldLength(type, input);
+                    return validation.isValid ? undefined : validation.errorMessage;
+                }
+            });
+
+            if (lengthInput === undefined) return; // User cancelled
+            length = lengthInput.trim();
+        };
+
+        // Get initialization value (optional)
+        const currentInit = keepsType ? field.init ?? '' : '';
+        const init = await vscode.window.showInputBox({
+            prompt: 'Init value (optional)',
+            placeHolder: getInitPlaceholder(type),
+            value: currentInit,
+            valueSelection: [0, currentInit.length],
+            validateInput: (input) => {
+                const validation = validateInitValue(type, input, length);
+                return validation.isValid ? undefined : validation.errorMessage;
+            }
+        });
+
+        if (init === undefined) return; // User cancelled
+
+        field.name = name.trim();
+        field.type = type;
+        field.length = length;
+        field.init = init.trim() === '' ? undefined : init.trim();
+
+        provider.refresh();
+        vscode.window.showInformationMessage(`Field "${name.trim()}" updated.`);
+
+    } catch (error) {
+        console.error('Error editing field:', error);
+        vscode.window.showErrorMessage(`Failed to edit field: ${error instanceof Error ? error.message : String(error)}`);
     };
 };

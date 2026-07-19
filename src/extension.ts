@@ -5,7 +5,7 @@
 */
 
 import * as vscode from 'vscode';
-import { handleInsert, updateContext, deleteField, insertField, insertSubstructure, insertFieldSubstructure, addDimensionToField, addPositionToField } from './rpg-structure.utils';
+import { handleInsert, updateContext, deleteField, insertField, insertSubstructure, insertFieldSubstructure, insertSubstructureInSubstructure, addDimensionToField, addPositionToField, editField } from './rpg-structure.utils';
 import { HeaderTreeDataProvider, StructureItem, FieldsTreeDataProvider, FieldItem, ConfigProvider, ConfigItem } from './rpg-structure.providers';
 import { loadConfiguration, saveConfiguration, currentConfiguration } from './rpg-structure.configuration';
 import { header, fields, COMMANDS, TREE_DATA_PROVIDERS, StructureFormat, StructureType, Field, isAnonymousName } from './rpg-structure.model';
@@ -116,7 +116,12 @@ function registerCommands(
             insertFieldSubstructure(item.idNumber, fieldsProvider);
             updateFieldsContext();
         }),
-        
+
+        vscode.commands.registerCommand(COMMANDS.ADD_SUBSTRUCTURE_TO_SUBSTRUCTURE, (item: FieldItem) => {
+            insertSubstructureInSubstructure(item.idNumber, fieldsProvider);
+            updateFieldsContext();
+        }),
+
         vscode.commands.registerCommand(COMMANDS.DELETE_FIELD, (item: FieldItem) => {
             deleteField(item, fieldsProvider);
             updateFieldsContext();
@@ -156,6 +161,10 @@ function registerCommands(
 
         vscode.commands.registerCommand(COMMANDS.ADD_POSITION, async(item: Field) => {
             await addPositionToField(item.idNumber, fieldsProvider);
+        }),
+
+        vscode.commands.registerCommand(COMMANDS.EDIT_FIELD, async(item: Field) => {
+            await editField(item.idNumber, fieldsProvider);
         })
     ];
     
